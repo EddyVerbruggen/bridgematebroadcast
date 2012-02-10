@@ -25,6 +25,7 @@ public class Broadcaster {
           Object obj = await(liveStream.nextEvent()); // using object, so we can publish anything.. although it's most likely a List<Model>
           if (obj != null) {
             outbound.sendJson(obj);
+            Logger.info("enjoying sending a JSON object");
           }
         } catch (Throwable t) {
           Logger.error(t, t.getMessage());
