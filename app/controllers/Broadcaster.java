@@ -12,8 +12,8 @@ public class Broadcaster {
     public static boolean hasConnection;
 
     public static void stream() {
-      if (true) {
-        outbound.sendJson("history (not using stream)");
+      if ("true".equals(request.routeArgs.get("history"))) {
+        outbound.sendJson("pushing entire history as requested... (not implemented yet)");
       }
       Logger.info("request URL: " + request.url);
       Logger.info("request querystring: " + request.querystring);
