@@ -13,9 +13,6 @@ public class Broadcaster {
 
     public static void stream() {
       if (true) {
-
-
-
         outbound.sendJson("history (not using stream)");
       }
       Logger.info("request URL: " + request.url);
