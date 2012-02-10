@@ -1,0 +1,21 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+GET     /                                       Application.index
+GET     /dummy.html                             Application.noop
+
+# Ignore favicon requests
+GET     /favicon.ico                            404
+
+# Map static resources from the /app/public folder to the /public path
+GET     /public/                                staticDir:public
+
+WS      /socket                                 Broadcaster.WebSocket.stream
+WS      /socket/match/{id}                      Broadcaster.WebSocket.stream
+WS      /socketklant2                           Broadcaster.WebSocket.stream
+
+# Catch all (this must be last!)
+*       /{controller}/{action}                  {controller}.{action}
+
