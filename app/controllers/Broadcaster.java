@@ -12,7 +12,7 @@ public class Broadcaster {
     public static boolean hasConnection;
 
     public static void stream() {
-      if ("true".equals(request.routeArgs.get("history"))) {
+      if (request.querystring.contains("history=true")) {
         outbound.sendJson("pushing entire history as requested... (not implemented yet)");
       }
       Logger.info("request URL: " + request.url);
