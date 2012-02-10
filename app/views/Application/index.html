@@ -12,7 +12,7 @@
   // WebSocket not supported by Firefox (use MozWebSocket)
   // Note on Chrome: play 1.2.5 will support Chrome 16 & 17 (play 2 does already)
   var socket = navigator.userAgent.indexOf('Firefox')>-1 ?
-          new MozWebSocket('ws://localhost:9001/socket/match/101') :
+          new MozWebSocket('@@{Broadcaster.WebSocket.stream}/match/101') :
           new WebSocket('@@{Broadcaster.WebSocket.stream}');
 
   socket.onmessage = function(event) {
