@@ -12,10 +12,15 @@ GET     /favicon.ico                            404
 # Map static resources from the /app/public folder to the /public path
 GET     /public/                                staticDir:public
 
+# match data
+GET     /data/tournament/{tournamentid}         Data.tournament
+GET     /data/tournament/{tournamentid}/sessions         Data.sessions
+GET     /data/tournament/{tournamentid}/session/{sessionid}         Data.session
+
+# WebSockets
 WS      /socket                                 Broadcaster.WebSocket.stream
 WS      /socket/match/{id}                      Broadcaster.WebSocket.stream
 WS      /socketklant2                           Broadcaster.WebSocket.stream
 
 # Catch all (this must be last!)
 *       /{controller}/{action}                  {controller}.{action}
-
