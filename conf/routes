@@ -4,6 +4,7 @@
 
 # Home page
 GET     /                                       Application.index
+GET     /test.html                              Application.test
 GET     /dummy.html                             Application.noop
 
 # Ignore favicon requests
@@ -21,6 +22,9 @@ GET     /data/tournament/{tournamentid}/session/{sessionid}         Data.session
 WS      /socket                                 Broadcaster.WebSocket.stream
 WS      /socket/match/{id}                      Broadcaster.WebSocket.stream
 WS      /socketklant2                           Broadcaster.WebSocket.stream
+
+
+WS      /fullsocket                             FullBroadcaster.WebSocket.stream
 
 # Catch all (this must be last!)
 *       /{controller}/{action}                  {controller}.{action}

@@ -1,5 +1,7 @@
 package controllers;
 
+import models.channel.Channel;
+import models.channel.ChannelManager;
 import play.Logger;
 import play.libs.F;
 import play.mvc.WebSocketController;
@@ -18,11 +20,16 @@ public class Broadcaster {
       Logger.info("request URL: " + request.url);
       Logger.info("request querystring: " + request.querystring);
       Logger.info("request routed id: " + request.routeArgs.get("id"));
+      Long matchID = Long.parseLong(request.routeArgs.get("id"));
+
+      String subscriber = "TEST";
+      Channel channel = ChannelManager.getInstance().subscribe(subscriber, matchID);
+
       hasConnection = false;
       while (inbound.isOpen()) {
         hasConnection = true;
         try {
-          Object obj = await(liveStream.nextEvent()); // using object, so we can publish anything.. although it's most likely a List<Model>
+          Object obj = await(channel.nextEvent()); // using object, so we can publish anything.. although it's most likely a List<Model>
           if (obj != null) {
             outbound.sendJson(obj);
             Logger.info("enjoying sending a JSON object");

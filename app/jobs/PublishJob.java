@@ -1,15 +1,13 @@
 package jobs;
 
 import controllers.Broadcaster;
-import models.Match;
+import models.channel.Channel;
+import models.channel.ChannelManager;
 import models.Play;
-import models.Tournament;
 import play.Logger;
 import play.jobs.Every;
 import play.jobs.Job;
 import play.jobs.OnApplicationStart;
-
-import java.util.List;
 
 @OnApplicationStart(async = true)
 @Every("10s")
@@ -19,8 +17,7 @@ public class PublishJob extends Job {
   
   @Override
   public void doJob() throws Exception {
-    if (Broadcaster.WebSocket.hasConnection) {
-      Logger.info("There is a connection, so looking for stuff to publish...");
+      Logger.info("Publishing....");
 
       // query db here and put the list of stuff in the publish method below
       // a few examples:
@@ -31,13 +28,19 @@ public class PublishJob extends Job {
 
 //      List<Play> obj = Play.find("byMatchid", 102383L).fetch();
 
-      System.err.println("i: " + i++);
-
       Play obj = Play.find("byMatchid", 102383L).first();
 
-      Broadcaster.liveStream.publish(obj);
-    } else {
+      // TODO base query on matchid
+      Channel channel = ChannelManager.getInstance().findChannel(101L);
+
+      if (channel != null) {
+        Logger.info("Publishing to channel " + channel);
+        channel.publish(obj);
+      } else {
+        Logger.info("No one is published");
+      }
+
+//      Broadcaster.liveStream.publish(obj);
 //      Logger.info("No cnx, no query.");
-    }
   }
 }
