@@ -1,20 +1,18 @@
 package controllers;
 
+import controllers.util.QueryStringParser;
+import models.Match;
+import models.Session;
+import models.Tournament;
 import models.channel.Channel;
 import models.channel.ChannelManager;
 import play.Logger;
 import play.libs.F;
-import play.mvc.Http;
 import play.mvc.WebSocketController;
 
-import play.*;
-import play.mvc.*;
-import play.libs.*;
 import play.libs.F.*;
 import play.mvc.Http.*;
 
-import static play.libs.F.*;
-import static play.libs.F.Matcher.*;
 import static play.mvc.Http.WebSocketEvent.*;
 
 
@@ -25,12 +23,9 @@ public class FullBroadcaster {
     private static Channel subscriptionChannel;
 
     public static void stream() {
-
-      String subscriber = "TEST";
-
       Logger.info("entered new fullbroadcaster");
 
-//      channel = ChannelManager.getInstance().subscribe(matchID);
+      String subscriber = "TEST";
 
       while (inbound.isOpen()) {
         Logger.info("awaiting input...");
@@ -54,8 +49,7 @@ public class FullBroadcaster {
           }
           if (either._2.isDefined()) {
             // subscriptionChannel event received, send to client
-            outbound.sendJson(either._2.get());
-            Logger.info("enjoying sending a JSON object");
+            handleChannelEvent(either._2.get());
           }
         }
 
@@ -67,16 +61,35 @@ public class FullBroadcaster {
       }
     }
 
+    private static void handleChannelEvent(Object channelEvent) {
+      Logger.info("handleChannelEvent " + channelEvent);
+      outbound.sendJson(channelEvent);
+    }
+
     private static void handleClientEvent(String subscriber, WebSocketEvent clientEvent) {
       Logger.info("handleClientEvent " + clientEvent);
 
       for(String userMessage: TextFrame.match(clientEvent)) {
+        QueryStringParser parser = new QueryStringParser(userMessage);
 
-        if ("subscribe101".equals(userMessage)) {
-          Logger.info("Subscribing to channel 101");
-          subscriptionChannel = ChannelManager.getInstance().subscribe(subscriber, 101L);
+        if ("getTournaments".equals(parser.getCommand())) {
+          getTournaments();
+        } else if ("getTournament".equals(parser.getCommand())) {
+          getTournament(parser);
+        } else if ("getTournamentSessions".equals(parser.getCommand())) {
+          getTournamentSessions(parser);
+        } else if ("getSession".equals(parser.getCommand())) {
+          getSession(parser);
+        } else if ("getSessionMatches".equals(parser.getCommand())) {
+          getSessionMatches(parser);
+        } else if ("subscribeToMatch".equals(parser.getCommand())) {
+          subscribeToMatch(subscriber, parser);
+        } else if ("quit".equals(parser.getCommand())) {
+          quit(subscriber);
         } else {
-          handleUserInput(subscriber, userMessage);
+          // Unknown command, just echoing user input
+          Logger.info("echo user input " + userMessage);
+          outbound.sendJson(userMessage);
         }
       }
       
@@ -86,20 +99,69 @@ public class FullBroadcaster {
       }
     }
 
+    private static void quit(String subscriber) {
+      outbound.sendJson("Quitting...");
+      quitAndUnsubscribe(subscriber);
+    }
+
+    private static void subscribeToMatch(String subscriber, QueryStringParser parser) {
+      if (parser.getParams().size() != 3) {
+        outbound.sendJson("Invalid request");
+        return;
+      }
+      final Long tournamentID = Long.parseLong(parser.getParams().get(0));
+      final Long sessionID = Long.parseLong(parser.getParams().get(1));
+      final Long matchID = Long.parseLong(parser.getParams().get(2));
+      subscriptionChannel = ChannelManager.getInstance().subscribe(subscriber, tournamentID, sessionID, matchID);
+    }
+
+    private static void getTournaments() {
+      outbound.sendJson(Tournament.findAll());
+    }
+
+    private static void getTournament(QueryStringParser parser) {
+      if (parser.getParams().size() != 1) {
+        outbound.sendJson("Invalid request");
+        return;
+      }
+      final Long tournamentID = Long.parseLong(parser.getParams().get(0));
+      outbound.sendJson(Tournament.findById(tournamentID));
+    }
+
+    private static void getTournamentSessions(QueryStringParser parser) {
+      if (parser.getParams().size() != 1) {
+        outbound.sendJson("Invalid request");
+        return;
+      }
+      final Long tournamentID = Long.parseLong(parser.getParams().get(0));
+      outbound.sendJson(Session.find("byTournamentid", tournamentID).fetch());
+    }
+
+    private static void getSession(QueryStringParser parser) {
+      if (parser.getParams().size() != 2) {
+        outbound.sendJson("Invalid request");
+        return;
+      }
+      final Long tournamentID = Long.parseLong(parser.getParams().get(0));
+      final Long sessionID = Long.parseLong(parser.getParams().get(1));
+      outbound.sendJson(Session.find("tournament.tournamentid = ? and sessionid = ?", tournamentID, sessionID).first());
+    }
+
+    private static void getSessionMatches(QueryStringParser parser) {
+      if (parser.getParams().size() != 2) {
+        outbound.sendJson("Invalid request");
+        return;
+      }
+      final Long tournamentID = Long.parseLong(parser.getParams().get(0));
+      final Long sessionID = Long.parseLong(parser.getParams().get(1));
+      outbound.sendJson(Match.find("bySessionid", sessionID).fetch());
+    }
+    
     private static void quitAndUnsubscribe(String subscriber) {
       if (subscriptionChannel != null) {
         ChannelManager.getInstance().unsubscribe(subscriptionChannel, subscriber);
       }
       disconnect();
-    }
-
-    private static void handleUserInput(String subscriber, String userMessage) {
-      Logger.info("handleUserInput " + userMessage);
-      if ("quit".equals(userMessage)) {
-        outbound.sendJson("Quitting....");
-        quitAndUnsubscribe(subscriber);
-      }
-      outbound.sendJson(userMessage);
     }
   }
 }

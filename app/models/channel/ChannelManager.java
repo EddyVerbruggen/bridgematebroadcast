@@ -20,15 +20,12 @@ public class ChannelManager {
     return instance;
   }
 
-  /**
-   *
-   */
-  public Channel subscribe(String subscriber, Long matchID){
-    Channel channel = findChannel(matchID);
+  public Channel subscribe(String subscriber, Long tournamentID, Long sessionID, Long matchID){
+    Channel channel = findChannel(tournamentID, sessionID, matchID);
     
     if (channel == null) {
       channel = new Channel();
-      channel.id = matchID;
+      channel.channelID = new ChannelID(tournamentID, sessionID, matchID);
       channel.channelType = ChannelType.MATCH;
       channels.add(channel);
 
@@ -40,9 +37,11 @@ public class ChannelManager {
     return channel;
   }
 
-  public Channel findChannel(Long matchID) {
+  public Channel findChannel(Long tournamentID, Long sessionID, Long matchID) {
+    ChannelID channelID = new ChannelID(tournamentID, sessionID, matchID);
+    
     for (Channel channel : channels) {
-      if (channel.id.equals(matchID)) {
+      if (channel.channelID.equals(channelID)) {
         return channel;
       }
     }

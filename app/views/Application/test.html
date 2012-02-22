@@ -60,7 +60,7 @@
     
     // Message received on the socket
     socket.onmessage = function(event) {
-      $('#thread').append(event.data);
+      $('#thread').append(event.data).append("<br/><br/>");
     }
     
     $('#send').click(function(e) {

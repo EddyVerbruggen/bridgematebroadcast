@@ -8,7 +8,7 @@ import java.util.List;
 
 public class Channel {
   
-  public Long id;
+  public ChannelID channelID;
   public ChannelType channelType;
 
   // TODO: Replace with list of subscriber objects
@@ -34,7 +34,7 @@ public class Channel {
 
   @Override
   public String toString() {
-    return "Channel[" + id + "]";
+    return "Channel[" + channelID + "]";
   }
 
   public boolean hasNoSubscriptions() {
