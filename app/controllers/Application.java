@@ -4,15 +4,12 @@ import play.mvc.Controller;
 
 public class Application extends Controller {
 
-  public static void index() {
+  public static void poc() {
     render();
   }
 
-    public static void test() {
-        render();
-    }
-
-    public static void noop() {
-    }
+  public static void index() {
+      render();
+  }
 
 }
