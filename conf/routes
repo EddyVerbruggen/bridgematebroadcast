@@ -4,8 +4,7 @@
 
 # Home page
 GET     /                                       Application.index
-GET     /test.html                              Application.test
-GET     /dummy.html                             Application.noop
+GET     /poc.html                               Application.poc
 
 # Ignore favicon requests
 GET     /favicon.ico                            404
