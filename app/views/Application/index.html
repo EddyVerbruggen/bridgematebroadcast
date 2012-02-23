@@ -3,11 +3,26 @@
 
 <h1>WebSocket client for Bridgemate Data Publisher</h1>
 
-<div id="thread"></div>
+<pre>
+  <div id="thread"></div>
+</pre>
 
 <div id="newMessage">
-  <input type="text" id="message" autocomplete="off"/>
+  <input type="text" id="message" placeholder="type a command"/>
   <input type="submit" value="send" id="send"/>
+</div>
+
+<div id="examples">
+  <select name="example" onchange="if (this.value != '') {document.getElementById('message').value=this.value; document.getElementById('send').click()}">
+    <option value="">choose a command..</option>
+    <option value="getTournaments()">getTournaments()</option>
+    <option value="getTournament(100)">getTournament(100)</option>
+    <option value="getTournamentSessions(100)">getTournamentSessions(100)</option>
+    <option value="getSession(100,10008)">getSession(100,10004)</option>
+    <option value="getSessionMatches(100,10004)">getSessionMatches(100,10004)</option>
+    <option value="subscribeToMatch(100,10004,502320)">subscribeToMatch(100,10004,502320)</option>
+    <option value="unsubscribe()">unsubscribe()</option>
+  </select> or
 </div>
 
 <script type="text/javascript">
@@ -19,7 +34,8 @@
 
     // Message received on the socket
     socket.onmessage = function(event) {
-      $('#thread').append(event.data).append("<br/><br/>");
+      $('#thread').append(formatJson(event.data)).append("<br/><br/>");
+      document.getElementById("thread").scrollTop = document.getElementById("thread").scrollHeight;
     }
     
     $('#send').click(function(e) {

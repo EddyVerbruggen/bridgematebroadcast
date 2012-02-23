@@ -73,7 +73,7 @@ h1 a {
     top: 50px;
     left: 14px;
     right: 14px;
-    bottom: 100px;
+    bottom: 160px;
     background: white;
     border-bottom: 3px solid #666;
     padding: 10px;
@@ -131,13 +131,25 @@ h1 a {
 
 #newMessage {
     position: fixed;
-    left: 14px;
+    left: 270px;
     right: 14px;
-    bottom: 30px;
+    bottom: 90px;
     height: 60px;
 }
 
 #newMessage #message {
     width: 70%;
     padding: 5px;
+}
+
+#examples {
+    position: fixed;
+    left: 14px;
+    right: 14px;
+    width: 260px;
+    bottom: 125px;
+}
+
+#examples select {
+  width: 230px;
 }
