@@ -1,6 +1,8 @@
 package jobs;
 
 import controllers.Broadcaster;
+import models.Match;
+import models.MatchID;
 import models.channel.Channel;
 import models.channel.ChannelManager;
 import models.Play;
@@ -51,8 +53,7 @@ public class PublishJob extends Job {
   }
 
   private void handleMatchSubscription(Channel channel, Long sessionID, Long matchID) {
-
-    Play obj = Play.find("byMatchid", matchID).first();
+    Play obj = Play.find("sessionid = ? and matchid = ?", sessionID, matchID).first();
     if (obj != null) {
       Logger.info("Publishing object " + obj);
       channel.publish(obj);
