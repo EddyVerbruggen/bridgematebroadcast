@@ -17,5 +17,6 @@ public class Tournament extends GenericModel {
   public String location;
   public Date startdate;
   public Date enddate;
+  public String timezone;
 
 }

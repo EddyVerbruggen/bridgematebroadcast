@@ -1,9 +1,7 @@
 package controllers;
 
 import controllers.util.QueryStringParser;
-import models.Match;
-import models.Session;
-import models.Tournament;
+import models.*;
 import models.channel.Channel;
 import models.channel.ChannelManager;
 import play.Logger;
@@ -63,6 +61,9 @@ public class FullBroadcaster {
 
     private static void handleChannelEvent(Object channelEvent) {
       Logger.info("handleChannelEvent " + channelEvent);
+
+      //TODO: Check if match status has become 2 --> end of match, remove subscription
+
       outbound.sendJson(channelEvent);
     }
 
@@ -112,10 +113,23 @@ public class FullBroadcaster {
       final Long tournamentID = Long.parseLong(parser.getParams().get(0));
       final Long sessionID = Long.parseLong(parser.getParams().get(1));
       final Long matchID = Long.parseLong(parser.getParams().get(2));
+
+      // First, send match record
+      MatchID matchIDObj = new MatchID(matchID, sessionID);
+      outbound.sendJson(Match.findById(matchIDObj));
+      // Second, send handrecord
+      outbound.sendJson(Handrecord.findById(sessionID));
+
+      // Third, send play records... (Do we need to?)
+      // Fourth, send result record
+
+
+
       subscriptionChannel = ChannelManager.getInstance().subscribe(subscriber, tournamentID, sessionID, matchID);
     }
 
     private static void getTournaments() {
+      //TODO: Handle status (do not return status 2)
       outbound.sendJson(Tournament.findAll());
     }
 
@@ -134,6 +148,7 @@ public class FullBroadcaster {
         return;
       }
       final Long tournamentID = Long.parseLong(parser.getParams().get(0));
+      //TODO: Handle status (do not return status 2)
       outbound.sendJson(Session.find("byTournamentid", tournamentID).fetch());
     }
 
@@ -154,6 +169,7 @@ public class FullBroadcaster {
       }
       final Long tournamentID = Long.parseLong(parser.getParams().get(0));
       final Long sessionID = Long.parseLong(parser.getParams().get(1));
+      //TODO: Handle status (do not return status 2)
       outbound.sendJson(Match.find("bySessionid", sessionID).fetch());
     }
     

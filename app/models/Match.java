@@ -14,6 +14,9 @@ public class Match extends GenericModel {
 //  @ManyToOne(optional = false)
 //  @JoinColumn(name = "sessionid", insertable = false, updatable = false)
 //  public Session session;
+
+  public Long tablenumber;
+  public String section;
   public String room;
   public Long othertablematchid; // OneToOne or kiss?
 

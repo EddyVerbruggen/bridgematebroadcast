@@ -2,9 +2,7 @@ package models;
 
 import play.db.jpa.GenericModel;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.util.Date;
 
 @Entity
@@ -13,8 +11,10 @@ public class Play extends GenericModel {
   
   @Id
   public Long playid;
-  public Long matchid;
-  public Long sessionid;
+
+  @ManyToOne(optional = false)
+  @JoinColumns({@JoinColumn(name = "matchid", referencedColumnName = "matchid"), @JoinColumn(name = "sessionid", referencedColumnName = "sessionid")})
+  public Match match;
   public Long externalid;
   public Long roundnumber;
   public Long boardnumber;
@@ -24,4 +24,12 @@ public class Play extends GenericModel {
   public String action;
   public Date timestamp;
   public Long iserased;
+
+  @Override
+  public String toString() {
+    return "Play{" +
+      "playid=" + playid +
+      ", match=" + match.id +
+      "}";
+  }
 }

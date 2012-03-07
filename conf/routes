@@ -17,6 +17,9 @@ GET     /data/tournament/{tournamentid}         Data.tournament
 GET     /data/tournament/{tournamentid}/sessions         Data.sessions
 GET     /data/tournament/{tournamentid}/session/{sessionid}         Data.session
 
+#CRUD admin pages
+*       /admin                                  module:crud
+
 # WebSockets
 WS      /socket                                 Broadcaster.WebSocket.stream
 WS      /socket/match/{id}                      Broadcaster.WebSocket.stream

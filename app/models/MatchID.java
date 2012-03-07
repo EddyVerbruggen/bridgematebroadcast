@@ -7,14 +7,10 @@ import java.io.Serializable;
 public class MatchID implements Serializable {
   public Long matchid;
   public Long sessionid;
-  public Long tablenumber;
-  public String section;
 
-  public MatchID(Long matchid, Long sessionid, Long tablenumber, String section) {
+  public MatchID(Long matchid, Long sessionid) {
     this.matchid = matchid;
     this.sessionid = sessionid;
-    this.tablenumber = tablenumber;
-    this.section = section;
   }
 
   @Override
@@ -31,13 +27,7 @@ public class MatchID implements Serializable {
     if (!matchid.equals(matchID.matchid)) {
       return false;
     }
-    if (!section.equals(matchID.section)) {
-      return false;
-    }
     if (!sessionid.equals(matchID.sessionid)) {
-      return false;
-    }
-    if (!tablenumber.equals(matchID.tablenumber)) {
       return false;
     }
 
@@ -48,8 +38,11 @@ public class MatchID implements Serializable {
   public int hashCode() {
     int result = matchid.hashCode();
     result = 31 * result + sessionid.hashCode();
-    result = 31 * result + tablenumber.hashCode();
-    result = 31 * result + section.hashCode();
     return result;
+  }
+
+  @Override
+  public String toString() {
+    return "{ matchid = " + matchid + ", sessionid = "+ sessionid + "}";
   }
 }
