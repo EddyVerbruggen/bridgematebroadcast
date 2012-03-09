@@ -5,8 +5,13 @@ import play.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Singleton ChannelManager. Responsible for creating and managing channels.
+ * Subscribing/unsubscribing to a channel happens here.
+ */
 public class ChannelManager {
 
+  // All existing channels in the application
   private List<Channel> channels = new ArrayList<Channel>();
 
   private static ChannelManager instance;
@@ -20,16 +25,26 @@ public class ChannelManager {
     return instance;
   }
 
-  public Channel subscribe(String subscriber, Long tournamentID, Long sessionID, Long matchID){
-    Channel channel = findChannel(tournamentID, sessionID, matchID);
+  /**
+   * Subscribe to a channel with sessionid and (possibly) matchid
+   * @param subscriber The subscriber to the channel
+   * @param sessionID The session to subscribe to
+   * @param matchID The match to subscribe to
+   * @return
+   *
+   * TODO: Replace String subscriber with Subscriber object
+   */
+  public Channel subscribe(String subscriber, Long sessionID, Long matchID){
+    Channel channel = findChannel(sessionID, matchID);
     
     if (channel == null) {
+      // If the channel isn't there yet, create one
       channel = new Channel();
-      channel.channelID = new ChannelID(tournamentID, sessionID, matchID);
+      channel.channelID = new ChannelID(sessionID, matchID);
       channel.channelType = ChannelType.MATCH;
       channels.add(channel);
 
-      Logger.info("created channel");
+      Logger.info("created channel for [sessionid = " + sessionID + ", matchid = " + matchID +"]");
     }
     
     channel.subscribe(subscriber);
@@ -37,8 +52,8 @@ public class ChannelManager {
     return channel;
   }
 
-  public Channel findChannel(Long tournamentID, Long sessionID, Long matchID) {
-    ChannelID channelID = new ChannelID(tournamentID, sessionID, matchID);
+  public Channel findChannel(Long sessionID, Long matchID) {
+    ChannelID channelID = new ChannelID(sessionID, matchID);
     
     for (Channel channel : channels) {
       if (channel.channelID.equals(channelID)) {

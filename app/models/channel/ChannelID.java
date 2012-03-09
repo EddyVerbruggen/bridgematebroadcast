@@ -1,18 +1,12 @@
 package models.channel;
 
 public class ChannelID {
-  private Long tournamentID;
   private Long sessionID;
   private Long matchID;
   
-  public ChannelID (Long tournamentID, Long sessionID, Long matchID) {
-    this.tournamentID = tournamentID;
+  public ChannelID (Long sessionID, Long matchID) {
     this.sessionID = sessionID;
     this.matchID = matchID;
-  }
-
-  public Long getTournamentID() {
-    return tournamentID;
   }
 
   public Long getSessionID() {
@@ -32,16 +26,13 @@ public class ChannelID {
 
     if (matchID != null ? !matchID.equals(channelID.matchID) : channelID.matchID != null) return false;
     if (sessionID != null ? !sessionID.equals(channelID.sessionID) : channelID.sessionID != null) return false;
-    if (tournamentID != null ? !tournamentID.equals(channelID.tournamentID) : channelID.tournamentID != null)
-      return false;
 
     return true;
   }
 
   @Override
   public int hashCode() {
-    int result = tournamentID != null ? tournamentID.hashCode() : 0;
-    result = 31 * result + (sessionID != null ? sessionID.hashCode() : 0);
+    int result = sessionID != null ? sessionID.hashCode() : 0;
     result = 31 * result + (matchID != null ? matchID.hashCode() : 0);
     return result;
   }

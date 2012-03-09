@@ -125,7 +125,7 @@ public class FullBroadcaster {
 
 
 
-      subscriptionChannel = ChannelManager.getInstance().subscribe(subscriber, tournamentID, sessionID, matchID);
+      subscriptionChannel = ChannelManager.getInstance().subscribe(subscriber, sessionID, matchID);
     }
 
     private static void getTournaments() {

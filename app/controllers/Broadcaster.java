@@ -23,7 +23,7 @@ public class Broadcaster {
       Long matchID = Long.parseLong(request.routeArgs.get("id"));
 
       String subscriber = "TEST";
-      Channel channel = ChannelManager.getInstance().subscribe(subscriber, matchID, matchID, matchID);
+      Channel channel = ChannelManager.getInstance().subscribe(subscriber, matchID, matchID);
 
       hasConnection = false;
       while (inbound.isOpen()) {
