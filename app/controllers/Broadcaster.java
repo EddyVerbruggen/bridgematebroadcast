@@ -1,5 +1,6 @@
 package controllers;
 
+import models.Subscriber;
 import models.channel.Channel;
 import models.channel.ChannelManager;
 import play.Logger;
@@ -22,7 +23,8 @@ public class Broadcaster {
       Logger.info("request routed id: " + request.routeArgs.get("id"));
       Long matchID = Long.parseLong(request.routeArgs.get("id"));
 
-      String subscriber = "TEST";
+      Subscriber subscriber = new Subscriber();
+      subscriber.name = "TEST";
       Channel channel = ChannelManager.getInstance().subscribe(subscriber, matchID, matchID);
 
       hasConnection = false;

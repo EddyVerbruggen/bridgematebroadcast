@@ -15,6 +15,6 @@ public class Subscriber extends GenericModel {
   public String name;
   public String loginName;
   public String password;
-  public boolean active;
+  public String active;
 
 }

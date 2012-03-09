@@ -11,6 +11,8 @@ import play.jobs.Every;
 import play.jobs.Job;
 import play.jobs.OnApplicationStart;
 
+import java.util.List;
+
 /*
       // query db here and put the list of stuff in the publish method below
       // a few examples:
@@ -53,12 +55,26 @@ public class PublishJob extends Job {
   }
 
   private void handleMatchSubscription(Channel channel, Long sessionID, Long matchID) {
-    Play obj = Play.find("sessionid = ? and matchid = ?", sessionID, matchID).first();
-    if (obj != null) {
+    // 1. Check on and send new Play records
+    // TODO: Order by playid ASC
+    List<Play> obj = Play.find("sessionid = ? and matchid = ? and playid > ?", sessionID, matchID, channel.lastPublishedPlayID).fetch();
+    if (obj != null && obj.size() > 0) {
       Logger.info("Publishing object " + obj);
       channel.publish(obj);
+      Play lastPlayRecord = obj.get(obj.size());
+      channel.lastPublishedPlayID = lastPlayRecord.playid;
     } else {
       Logger.info("object is null");
+    }
+
+    // 2. Check if match is finished yet
+    MatchID matchIDObj = new MatchID(matchID, sessionID); 
+    Match match = Match.findById(matchIDObj);
+    if (match.isFinished()) {
+      channel.publish(match);
+      // Publish match object, since match is finished
+      // TODO: Kill all subscriptions on match here... (and see if that works or if that has to be done in the FullBroadcaster)
+      //ChannelManager.getInstance().
     }
   }
 }

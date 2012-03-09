@@ -1,6 +1,7 @@
 package models.channel;
 
 import models.Play;
+import models.Subscriber;
 import play.libs.F;
 
 import java.util.ArrayList;
@@ -16,23 +17,22 @@ public class Channel {
 
   public Long lastPublishedPlayID;
 
-  // TODO: Replace with list of subscriber objects
-  private List<String> subscribers = new ArrayList<String>();
+  private List<Subscriber> subscribers = new ArrayList<Subscriber>();
   
   private F.EventStream liveStream = new F.EventStream();
 
   // Use ChannelManager.subscribe to subscribe to a channel
-  void subscribe(String subscriber) {
+  void subscribe(Subscriber subscriber) {
     subscribers.add(subscriber);
   }
   
   // Use ChannelManager.subscribe to unsubscribe from a channel
-  void unsubscribe(String subscriber) {
+  void unsubscribe(Subscriber subscriber) {
     subscribers.remove(subscriber);
   }
 
-  public void publish(Play play) {
-    liveStream.publish(play);
+  public void publish(Object publishObject) {
+    liveStream.publish(publishObject);
   }
   
   public F.Promise nextEvent() {

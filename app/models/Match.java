@@ -37,4 +37,8 @@ public class Match extends GenericModel {
 
   public String teamnamens;
   public String teamnameew;
+
+  public boolean isFinished() {
+    return 2 == status;
+  }
 }

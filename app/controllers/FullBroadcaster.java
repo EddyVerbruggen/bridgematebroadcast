@@ -23,7 +23,8 @@ public class FullBroadcaster {
     public static void stream() {
       Logger.info("entered new fullbroadcaster");
 
-      String subscriber = "TEST";
+      // TODO: Create login for subscriber
+      Subscriber subscriber = Subscriber.find("loginname = ? and active = '1'", "Test").first();
 
       while (inbound.isOpen()) {
         Logger.info("awaiting input...");
@@ -62,12 +63,11 @@ public class FullBroadcaster {
     private static void handleChannelEvent(Object channelEvent) {
       Logger.info("handleChannelEvent " + channelEvent);
 
-      //TODO: Check if match status has become 2 --> end of match, remove subscription
-
+      //TODO: if channelEvent instanceof match => end of match, check if remove subscription in PublishJob works here
       outbound.sendJson(channelEvent);
     }
 
-    private static void handleClientEvent(String subscriber, WebSocketEvent clientEvent) {
+    private static void handleClientEvent(Subscriber subscriber, WebSocketEvent clientEvent) {
       Logger.info("handleClientEvent " + clientEvent);
 
       for(String userMessage: TextFrame.match(clientEvent)) {
@@ -100,12 +100,12 @@ public class FullBroadcaster {
       }
     }
 
-    private static void quit(String subscriber) {
+    private static void quit(Subscriber subscriber) {
       outbound.sendJson("Quitting...");
       quitAndUnsubscribe(subscriber);
     }
 
-    private static void subscribeToMatch(String subscriber, QueryStringParser parser) {
+    private static void subscribeToMatch(Subscriber subscriber, QueryStringParser parser) {
       if (parser.getParams().size() != 3) {
         outbound.sendJson("Invalid request");
         return;
@@ -173,7 +173,7 @@ public class FullBroadcaster {
       outbound.sendJson(Match.find("bySessionid", sessionID).fetch());
     }
     
-    private static void quitAndUnsubscribe(String subscriber) {
+    private static void quitAndUnsubscribe(Subscriber subscriber) {
       if (subscriptionChannel != null) {
         ChannelManager.getInstance().unsubscribe(subscriptionChannel, subscriber);
       }

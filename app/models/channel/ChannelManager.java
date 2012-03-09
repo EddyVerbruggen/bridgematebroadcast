@@ -1,5 +1,6 @@
 package models.channel;
 
+import models.Subscriber;
 import play.Logger;
 
 import java.util.ArrayList;
@@ -32,9 +33,8 @@ public class ChannelManager {
    * @param matchID The match to subscribe to
    * @return
    *
-   * TODO: Replace String subscriber with Subscriber object
    */
-  public Channel subscribe(String subscriber, Long sessionID, Long matchID){
+  public Channel subscribe(Subscriber subscriber, Long sessionID, Long matchID){
     Channel channel = findChannel(sessionID, matchID);
     
     if (channel == null) {
@@ -64,7 +64,7 @@ public class ChannelManager {
     return null;
   }
 
-  public void unsubscribe(Channel subscriptionChannel, String subscriber) {
+  public void unsubscribe(Channel subscriptionChannel, Subscriber subscriber) {
     subscriptionChannel.unsubscribe(subscriber);
     if (subscriptionChannel.hasNoSubscriptions()) {
       channels.remove(subscriptionChannel);
