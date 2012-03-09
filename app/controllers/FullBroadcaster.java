@@ -23,8 +23,7 @@ public class FullBroadcaster {
     public static void stream() {
       Logger.info("entered new fullbroadcaster");
 
-      // TODO: Create login for subscriber
-      Subscriber subscriber = Subscriber.find("loginname = ? and active = '1'", "Test").first();
+      Subscriber subscriber = loginSubscriber();
 
       while (inbound.isOpen()) {
         Logger.info("awaiting input...");
@@ -58,6 +57,17 @@ public class FullBroadcaster {
           handleClientEvent(subscriber, clientEvent);
         }
       }
+    }
+
+    private static Subscriber loginSubscriber() {
+      // TODO: Create login for subscriber
+//      Subscriber subscriber = Subscriber.find("loginname = ? and active = '1'", "Test").first();
+
+      Subscriber subscriber = new Subscriber();
+      subscriber.id = 1L;
+      subscriber.loginName = "test";
+      subscriber.name = "test";
+      return subscriber;
     }
 
     private static void handleChannelEvent(Object channelEvent) {
