@@ -36,4 +36,9 @@ public class ChannelID {
     result = 31 * result + (matchID != null ? matchID.hashCode() : 0);
     return result;
   }
+
+  @Override
+  public String toString() {
+    return "[sessionid = " + sessionID +", matchid = " + matchID + "]";
+  }
 }

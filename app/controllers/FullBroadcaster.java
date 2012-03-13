@@ -11,6 +11,8 @@ import play.mvc.WebSocketController;
 import play.libs.F.*;
 import play.mvc.Http.*;
 
+import java.util.List;
+
 import static play.mvc.Http.WebSocketEvent.*;
 
 
@@ -115,6 +117,12 @@ public class FullBroadcaster {
       quitAndUnsubscribe(subscriber);
     }
 
+    /**
+     * Subscribe subscriber to a match.
+     * TODO FUTURE: We can check here if the subscriber is allowed to subscribe and register the subscription for charging purposes.
+     * @param subscriber
+     * @param parser
+     */
     private static void subscribeToMatch(Subscriber subscriber, QueryStringParser parser) {
       if (parser.getParams().size() != 3) {
         outbound.sendJson("Invalid request");
@@ -124,25 +132,46 @@ public class FullBroadcaster {
       final Long sessionID = Long.parseLong(parser.getParams().get(1));
       final Long matchID = Long.parseLong(parser.getParams().get(2));
 
-      // First, send match record
       MatchID matchIDObj = new MatchID(matchID, sessionID);
-      outbound.sendJson(Match.findById(matchIDObj));
+      Match match = Match.findById(matchIDObj);
+
+      if (match.status == 2) {
+        // Match is finished, no subscription possible
+        outbound.sendJson("Match is finished");
+        return;
+      }
+
+      // First, send match record
+      outbound.sendJson(match);
+
       // Second, send handrecord
       outbound.sendJson(Handrecord.findById(sessionID));
 
-      // Third, send play records... (Do we need to?)
-      // Fourth, send result record
-
-
-
+      // Third, subscribe to the match channel
       subscriptionChannel = ChannelManager.getInstance().subscribe(subscriber, sessionID, matchID);
+
+      // Fourth, send play records... (Send all play records that will never be published anymore)
+      List<Play> plays = Play.find("sessionid = ? and matchid = ? and playid <= ? order by playid ASC", sessionID, matchID, subscriptionChannel.lastPublishedPlayID).fetch();
+      outbound.sendJson(plays);
+
+      // Fifth, send result records... (Send all result records that will never be published anymore)
+      List<Result> results = Result.find("sessionid = ? and matchid = ? and resultid <= ? order by resultid ASC", sessionID, matchID, subscriptionChannel.lastPublishedResultID).fetch();
+      outbound.sendJson(results);
+
     }
 
+    /**
+     * Get all events (tournaments)
+     */
     private static void getTournaments() {
       //TODO: Handle status (do not return status 2)
       outbound.sendJson(Tournament.findAll());
     }
 
+    /**
+     * Get event (tournament) details
+     * @param parser
+     */
     private static void getTournament(QueryStringParser parser) {
       if (parser.getParams().size() != 1) {
         outbound.sendJson("Invalid request");
@@ -152,16 +181,23 @@ public class FullBroadcaster {
       outbound.sendJson(Tournament.findById(tournamentID));
     }
 
+    /**
+     * Get all sessions for the event (tournament)
+     * @param parser
+     */
     private static void getTournamentSessions(QueryStringParser parser) {
       if (parser.getParams().size() != 1) {
         outbound.sendJson("Invalid request");
         return;
       }
       final Long tournamentID = Long.parseLong(parser.getParams().get(0));
-      //TODO: Handle status (do not return status 2)
-      outbound.sendJson(Session.find("byTournamentid", tournamentID).fetch());
+      outbound.sendJson(Session.find("tournament.tournamentid = ? and status <> ?", tournamentID, 2).fetch());
     }
 
+    /**
+     * Get session details
+     * @param parser
+     */
     private static void getSession(QueryStringParser parser) {
       if (parser.getParams().size() != 2) {
         outbound.sendJson("Invalid request");
@@ -172,6 +208,10 @@ public class FullBroadcaster {
       outbound.sendJson(Session.find("tournament.tournamentid = ? and sessionid = ?", tournamentID, sessionID).first());
     }
 
+    /**
+     * Get all matches for the session
+     * @param parser
+     */
     private static void getSessionMatches(QueryStringParser parser) {
       if (parser.getParams().size() != 2) {
         outbound.sendJson("Invalid request");
@@ -179,8 +219,7 @@ public class FullBroadcaster {
       }
       final Long tournamentID = Long.parseLong(parser.getParams().get(0));
       final Long sessionID = Long.parseLong(parser.getParams().get(1));
-      //TODO: Handle status (do not return status 2)
-      outbound.sendJson(Match.find("bySessionid", sessionID).fetch());
+      outbound.sendJson(Match.find("sessionid = ? and status <> ?", sessionID, 2).fetch());
     }
     
     private static void quitAndUnsubscribe(Subscriber subscriber) {

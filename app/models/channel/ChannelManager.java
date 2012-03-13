@@ -44,6 +44,8 @@ public class ChannelManager {
       channel.channelType = ChannelType.MATCH;
       channels.add(channel);
 
+      //TODO: Set lastPublishedPlayID?
+
       Logger.info("created channel for [sessionid = " + sessionID + ", matchid = " + matchID +"]");
     }
     

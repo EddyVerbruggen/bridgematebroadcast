@@ -3,6 +3,7 @@ package jobs;
 import controllers.Broadcaster;
 import models.Match;
 import models.MatchID;
+import models.Result;
 import models.channel.Channel;
 import models.channel.ChannelManager;
 import models.Play;
@@ -56,18 +57,26 @@ public class PublishJob extends Job {
 
   private void handleMatchSubscription(Channel channel, Long sessionID, Long matchID) {
     // 1. Check on and send new Play records
-    // TODO: Order by playid ASC
-    List<Play> obj = Play.find("sessionid = ? and matchid = ? and playid > ?", sessionID, matchID, channel.lastPublishedPlayID).fetch();
-    if (obj != null && obj.size() > 0) {
-      Logger.info("Publishing object " + obj);
-      channel.publish(obj);
-      Play lastPlayRecord = obj.get(obj.size());
+    List<Play> plays = Play.find("sessionid = ? and matchid = ? and playid > ? order by playid ASC", sessionID, matchID, channel.lastPublishedPlayID).fetch();
+    if (plays != null && plays.size() > 0) {
+      channel.publish(plays);
+      Play lastPlayRecord = plays.get(plays.size() - 1);
       channel.lastPublishedPlayID = lastPlayRecord.playid;
     } else {
-      Logger.info("object is null");
+      Logger.info("no play records to publish");
     }
 
-    // 2. Check if match is finished yet
+    // 2. Check on and send new Result records
+    List<Result> results = Result.find("sessionid = ? and matchid = ? and resultid > ? order by resultid ASC", sessionID, matchID, channel.lastPublishedResultID).fetch();
+    if (results != null && results.size() > 0) {
+      channel.publish(results);
+      Result lastResultRecord = results.get(results.size() - 1);
+      channel.lastPublishedResultID = lastResultRecord.resultid;
+    } else {
+      Logger.info("no result records to publish");
+    }
+    
+    // 3. Check if match is finished yet
     MatchID matchIDObj = new MatchID(matchID, sessionID); 
     Match match = Match.findById(matchIDObj);
     if (match.isFinished()) {
@@ -75,6 +84,8 @@ public class PublishJob extends Job {
       // Publish match object, since match is finished
       // TODO: Kill all subscriptions on match here... (and see if that works or if that has to be done in the FullBroadcaster)
       //ChannelManager.getInstance().
+    } else {
+      Logger.info("Match not finished yet");
     }
   }
 }
