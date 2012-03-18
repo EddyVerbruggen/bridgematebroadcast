@@ -14,23 +14,27 @@ public class QueryStringParser {
   private String command;
   private List<String> params = new ArrayList<String>();
   
-  public QueryStringParser(String queryString) {
+  public QueryStringParser(String queryString) throws QueryStringParserException {
     this.queryString = queryString;
     parse();
   }
   
-  private void parse() {
-    int indexOfFirstBracket = queryString.indexOf("(");
+  private void parse() throws QueryStringParserException {
+    try {
+      int indexOfFirstBracket = queryString.indexOf("(");
 
-    if (indexOfFirstBracket == -1) {
-      command = queryString;
-    } else {
-      this.command = queryString.substring(0, indexOfFirstBracket);
-      String paramString = queryString.substring(indexOfFirstBracket + 1, queryString.indexOf(")"));
-      StringTokenizer tokenizer = new StringTokenizer(paramString, ",");
-      while (tokenizer.hasMoreTokens()) {
-        params.add(tokenizer.nextToken());
+      if (indexOfFirstBracket == -1) {
+        command = queryString;
+      } else {
+        this.command = queryString.substring(0, indexOfFirstBracket);
+        String paramString = queryString.substring(indexOfFirstBracket + 1, queryString.indexOf(")"));
+        StringTokenizer tokenizer = new StringTokenizer(paramString, ",");
+        while (tokenizer.hasMoreTokens()) {
+          params.add(tokenizer.nextToken());
+        }
       }
+    } catch (Exception e) {
+      throw new QueryStringParserException("Invalid parameters");
     }
   }
 

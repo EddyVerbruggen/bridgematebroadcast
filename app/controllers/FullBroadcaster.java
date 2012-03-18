@@ -1,6 +1,7 @@
 package controllers;
 
 import controllers.util.QueryStringParser;
+import controllers.util.QueryStringParserException;
 import models.*;
 import models.channel.Channel;
 import models.channel.ChannelManager;
@@ -83,26 +84,30 @@ public class FullBroadcaster {
       Logger.info("handleClientEvent " + clientEvent);
 
       for(String userMessage: TextFrame.match(clientEvent)) {
-        QueryStringParser parser = new QueryStringParser(userMessage);
+        try {
+          QueryStringParser parser = new QueryStringParser(userMessage);
 
-        if ("getTournaments".equals(parser.getCommand())) {
-          getTournaments();
-        } else if ("getTournament".equals(parser.getCommand())) {
-          getTournament(parser);
-        } else if ("getTournamentSessions".equals(parser.getCommand())) {
-          getTournamentSessions(parser);
-        } else if ("getSession".equals(parser.getCommand())) {
-          getSession(parser);
-        } else if ("getSessionMatches".equals(parser.getCommand())) {
-          getSessionMatches(parser);
-        } else if ("subscribeToMatch".equals(parser.getCommand())) {
-          subscribeToMatch(subscriber, parser);
-        } else if ("quit".equals(parser.getCommand())) {
-          quit(subscriber);
-        } else {
-          // Unknown command, just echoing user input
-          Logger.info("echo user input " + userMessage);
-          outbound.sendJson(userMessage);
+          if ("getTournaments".equals(parser.getCommand())) {
+            getTournaments();
+          } else if ("getTournament".equals(parser.getCommand())) {
+            getTournament(parser);
+          } else if ("getTournamentSessions".equals(parser.getCommand())) {
+            getTournamentSessions(parser);
+          } else if ("getSession".equals(parser.getCommand())) {
+            getSession(parser);
+          } else if ("getSessionMatches".equals(parser.getCommand())) {
+            getSessionMatches(parser);
+          } else if ("subscribeToMatch".equals(parser.getCommand())) {
+            subscribeToMatch(subscriber, parser);
+          } else if ("quit".equals(parser.getCommand())) {
+            quit(subscriber);
+          } else {
+            // Unknown command, just echoing user input
+            Logger.info("echo user input " + userMessage);
+            outbound.sendJson(userMessage);
+          }
+        } catch (QueryStringParserException e) {
+          outbound.sendJson("Invalid request: " + userMessage);
         }
       }
       
