@@ -32,6 +32,10 @@ public class Channel {
     subscribers.remove(subscriber);
   }
 
+  void unsubscribeAll() {
+    subscribers.clear();
+  }
+
   public void publish(Object publishObject) {
     liveStream.publish(publishObject);
   }

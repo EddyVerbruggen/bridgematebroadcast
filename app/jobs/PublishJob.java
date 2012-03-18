@@ -83,7 +83,7 @@ public class PublishJob extends Job {
       channel.publish(match);
       // Publish match object, since match is finished
       // TODO: Kill all subscriptions on match here... (and see if that works or if that has to be done in the FullBroadcaster)
-      //ChannelManager.getInstance().
+      ChannelManager.getInstance().unsubscribeAll(channel);
     } else {
       Logger.info("Match not finished yet");
     }

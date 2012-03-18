@@ -1,5 +1,7 @@
 package models.channel;
 
+import models.Play;
+import models.Result;
 import models.Subscriber;
 import play.Logger;
 
@@ -44,9 +46,17 @@ public class ChannelManager {
       channel.channelType = ChannelType.MATCH;
       channels.add(channel);
 
-      //TODO: Set lastPublishedPlayID?
+      Play play = Play.find("sessionid = ? and matchid = ? order by playid DESC", sessionID, matchID).first();
+      if (play != null) {
+        channel.lastPublishedPlayID = play.playid;
+      }
 
-      Logger.info("created channel for [sessionid = " + sessionID + ", matchid = " + matchID +"]");
+      Result result = Result.find("sessionid = ? and matchid = ? order by resultid DESC", sessionID, matchID).first();
+      if (result != null) {
+        channel.lastPublishedResultID = result.resultid;
+      }
+
+      Logger.info("created channel for [sessionid = " + sessionID + ", matchid = " + matchID +", lastPublishedPlayID = " + channel.lastPublishedPlayID + ", lastPublishedResultID = " + channel.lastPublishedResultID + "]");
     }
     
     channel.subscribe(subscriber);
@@ -66,6 +76,11 @@ public class ChannelManager {
     return null;
   }
 
+  public void unsubscribeAll(Channel subscriptionChannel) {
+    subscriptionChannel.unsubscribeAll();
+    channels.remove(subscriptionChannel);
+  }
+  
   public void unsubscribe(Channel subscriptionChannel, Subscriber subscriber) {
     subscriptionChannel.unsubscribe(subscriber);
     if (subscriptionChannel.hasNoSubscriptions()) {
