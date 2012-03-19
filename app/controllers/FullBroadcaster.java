@@ -75,8 +75,6 @@ public class FullBroadcaster {
 
     private static void handleChannelEvent(Object channelEvent) {
       Logger.info("handleChannelEvent " + channelEvent);
-
-      //TODO: if channelEvent instanceof match => end of match, check if remove subscription in PublishJob works here
       outbound.sendJson(channelEvent);
     }
 

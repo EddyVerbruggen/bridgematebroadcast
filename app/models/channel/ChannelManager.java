@@ -5,8 +5,8 @@ import models.Result;
 import models.Subscriber;
 import play.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Singleton ChannelManager. Responsible for creating and managing channels.
@@ -15,8 +15,8 @@ import java.util.List;
 public class ChannelManager {
 
   // All existing channels in the application
-  private List<Channel> channels = new ArrayList<Channel>();
-
+  private ConcurrentMap<ChannelID, Channel> channelMap = new ConcurrentHashMap<ChannelID, Channel>();
+  
   private static ChannelManager instance;
 
   private ChannelManager(){}
@@ -44,7 +44,7 @@ public class ChannelManager {
       channel = new Channel();
       channel.channelID = new ChannelID(sessionID, matchID);
       channel.channelType = ChannelType.MATCH;
-      channels.add(channel);
+      channelMap.put(channel.channelID, channel);
 
       Play play = Play.find("sessionid = ? and matchid = ? order by playid DESC", sessionID, matchID).first();
       if (play != null) {
@@ -65,30 +65,22 @@ public class ChannelManager {
   }
 
   public Channel findChannel(Long sessionID, Long matchID) {
-    ChannelID channelID = new ChannelID(sessionID, matchID);
-    
-    for (Channel channel : channels) {
-      if (channel.channelID.equals(channelID)) {
-        return channel;
-      }
-    }
-
-    return null;
+    return channelMap.get(new ChannelID(sessionID, matchID));
   }
 
   public void unsubscribeAll(Channel subscriptionChannel) {
     subscriptionChannel.unsubscribeAll();
-    channels.remove(subscriptionChannel);
+    channelMap.remove(subscriptionChannel.channelID);
   }
   
   public void unsubscribe(Channel subscriptionChannel, Subscriber subscriber) {
     subscriptionChannel.unsubscribe(subscriber);
     if (subscriptionChannel.hasNoSubscriptions()) {
-      channels.remove(subscriptionChannel);
+      channelMap.remove(subscriptionChannel.channelID);
     }
   }
 
-  public List<Channel> getChannels() {
-    return channels;
+  public ConcurrentMap<ChannelID, Channel> getChannelMap() {
+    return channelMap;
   }
 }

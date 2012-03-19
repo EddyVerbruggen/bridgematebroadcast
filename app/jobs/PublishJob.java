@@ -1,18 +1,19 @@
 package jobs;
 
-import controllers.Broadcaster;
 import models.Match;
 import models.MatchID;
+import models.Play;
 import models.Result;
 import models.channel.Channel;
+import models.channel.ChannelID;
 import models.channel.ChannelManager;
-import models.Play;
 import play.Logger;
 import play.jobs.Every;
 import play.jobs.Job;
 import play.jobs.OnApplicationStart;
 
 import java.util.List;
+import java.util.Set;
 
 /*
       // query db here and put the list of stuff in the publish method below
@@ -34,20 +35,26 @@ public class PublishJob extends Job {
   public void doJob() throws Exception {
     Logger.info("Publishing....");
 
-    if (ChannelManager.getInstance().getChannels().isEmpty()) {
-      Logger.info("No channels to publish");
+    if (ChannelManager.getInstance().getChannelMap().isEmpty()) {
+      Logger.info("No channels to publish to");
     }
 
     // Handle subscriptions
-    for (Channel channel : ChannelManager.getInstance().getChannels()) {
+    Set<ChannelID> keys = ChannelManager.getInstance().getChannelMap().keySet();
 
+    for (ChannelID key : keys) {
+      Channel channel = ChannelManager.getInstance().getChannelMap().get(key);
       Logger.info("Publishing to channel " + channel);
 
       if (channel.channelID.getMatchID() != null) {
         // Match subscription
         Long sessionID = channel.channelID.getSessionID();
         Long matchID = channel.channelID.getMatchID();
-        handleMatchSubscription(channel, sessionID, matchID);
+        boolean isMatchFinished = handleMatchSubscription(channel, sessionID, matchID);
+        if (isMatchFinished) {
+          // Kill all subscriptions on match here...
+          ChannelManager.getInstance().unsubscribeAll(channel);
+        }
       } else {
         // Session subscription
         // TODO: Implement
@@ -55,7 +62,9 @@ public class PublishJob extends Job {
     }
   }
 
-  private void handleMatchSubscription(Channel channel, Long sessionID, Long matchID) {
+  private boolean handleMatchSubscription(Channel channel, Long sessionID, Long matchID) {
+    boolean isMatchFinished = false;
+
     // 1. Check on and send new Play records
     List<Play> plays = Play.find("sessionid = ? and matchid = ? and playid > ? order by playid ASC", sessionID, matchID, channel.lastPublishedPlayID).fetch();
     if (plays != null && plays.size() > 0) {
@@ -80,14 +89,13 @@ public class PublishJob extends Job {
     MatchID matchIDObj = new MatchID(matchID, sessionID); 
     Match match = Match.findById(matchIDObj);
     if (match.isFinished()) {
-      channel.publish(match);
       // Publish match object, since match is finished
-      // TODO: Kill all subscriptions on match here... (and see if that works or if that has to be done in the FullBroadcaster)
-
-      // TODO: Results in ConcurrentModificationException...
-      ChannelManager.getInstance().unsubscribeAll(channel);
+      channel.publish(match);
+      isMatchFinished = true;
     } else {
       Logger.info("Match not finished yet");
     }
+
+    return isMatchFinished;
   }
 }
