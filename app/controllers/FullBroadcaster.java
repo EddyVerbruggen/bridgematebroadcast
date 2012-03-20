@@ -23,10 +23,23 @@ public class FullBroadcaster {
 
     private static Channel subscriptionChannel;
 
-    public static void stream() {
+    private static Subscriber subscriber;
+
+    public static void stream(String username, String password) {
       Logger.info("entered new fullbroadcaster");
 
-      Subscriber subscriber = loginSubscriber();
+      loginSubscriber(username, password);
+
+      if (inbound.isOpen()) {
+        if (subscriber == null) {
+          Logger.info("Invalid username/password combination, disconnecting...");
+          outbound.sendJson("Invalid username/password combination, disconnecting...");
+          return;
+        } else {
+          Logger.info("Successfully logged on " + username);
+          outbound.sendJson("Successfully logged on " + username);
+        }
+      }
 
       while (inbound.isOpen()) {
         Logger.info("awaiting input...");
@@ -62,15 +75,14 @@ public class FullBroadcaster {
       }
     }
 
-    private static Subscriber loginSubscriber() {
-      // TODO: Create login for subscriber
-//      Subscriber subscriber = Subscriber.find("loginname = ? and active = '1'", "Test").first();
+    private static void loginSubscriber(String username, String password) {
+      Logger.info("logging in subscriber [username = " + username + ", password = " + password + "]");
 
-      Subscriber subscriber = new Subscriber();
-      subscriber.id = 1L;
-      subscriber.loginName = "test";
-      subscriber.name = "test";
-      return subscriber;
+      List<Subscriber> subscribers = Subscriber.find("loginname = ? and password = ? and active = '1'", username, password).fetch();
+
+      if (subscribers.size() == 1) {
+        subscriber = subscribers.get(0);
+      }
     }
 
     private static void handleChannelEvent(Object channelEvent) {

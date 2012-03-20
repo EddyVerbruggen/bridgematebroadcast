@@ -31,8 +31,8 @@
 
     // Create a socket
     var socket = navigator.userAgent.indexOf('Firefox')>-1 ?
-              new MozWebSocket('@@{FullBroadcaster.WebSocket.stream}') :
-              new WebSocket('@@{FullBroadcaster.WebSocket.stream}');
+              new MozWebSocket('@@{FullBroadcaster.WebSocket.stream}?username=test&password=test') :
+              new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=test&password=test');
 
     // Message received on the socket
     socket.onmessage = function(event) {
