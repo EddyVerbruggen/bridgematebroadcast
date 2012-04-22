@@ -45,4 +45,8 @@ public class QueryStringParser {
   public List<String> getParams() {
     return params;
   }
+
+  public String getQueryString() {
+    return queryString;
+  }
 }

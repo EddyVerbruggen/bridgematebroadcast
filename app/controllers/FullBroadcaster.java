@@ -1,5 +1,7 @@
 package controllers;
 
+import controllers.model.Error;
+import controllers.model.Response;
 import controllers.util.QueryStringParser;
 import controllers.util.QueryStringParserException;
 import models.*;
@@ -33,11 +35,11 @@ public class FullBroadcaster {
       if (inbound.isOpen()) {
         if (subscriber == null) {
           Logger.info("Invalid username/password combination, disconnecting...");
-          outbound.sendJson("Invalid username/password combination, disconnecting...");
+          outbound.sendJson(ResponseBuilder.createErrorResponse("", new Error(Error.ERROR_INCORRECT_CREDENTIALS)));
           return;
         } else {
           Logger.info("Successfully logged on " + username);
-          outbound.sendJson("Successfully logged on " + username);
+          outbound.sendJson(ResponseBuilder.createDataResponse("", "Successfully logged on " + username));
         }
       }
 
@@ -87,7 +89,7 @@ public class FullBroadcaster {
 
     private static void handleChannelEvent(Object channelEvent) {
       Logger.info("handleChannelEvent " + channelEvent);
-      outbound.sendJson(channelEvent);
+      outbound.sendJson(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", channelEvent));
     }
 
     private static void handleClientEvent(Subscriber subscriber, WebSocketEvent clientEvent) {
@@ -98,7 +100,7 @@ public class FullBroadcaster {
           QueryStringParser parser = new QueryStringParser(userMessage);
 
           if ("getTournaments".equals(parser.getCommand())) {
-            getTournaments();
+            getTournaments(parser);
           } else if ("getTournament".equals(parser.getCommand())) {
             getTournament(parser);
           } else if ("getTournamentSessions".equals(parser.getCommand())) {
@@ -110,14 +112,14 @@ public class FullBroadcaster {
           } else if ("subscribeToMatch".equals(parser.getCommand())) {
             subscribeToMatch(subscriber, parser);
           } else if ("quit".equals(parser.getCommand())) {
-            quit(subscriber);
+            quit(parser, subscriber);
           } else {
             // Unknown command, just echoing user input
             Logger.info("echo user input " + userMessage);
-            outbound.sendJson(userMessage);
+            outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_UNKNOWN_REQUEST)));
           }
         } catch (QueryStringParserException e) {
-          outbound.sendJson("Invalid request: " + userMessage);
+          outbound.sendJson(ResponseBuilder.createErrorResponse(userMessage, new Error(Error.ERROR_INVALID_REQUEST)));
         }
       }
       
@@ -127,8 +129,8 @@ public class FullBroadcaster {
       }
     }
 
-    private static void quit(Subscriber subscriber) {
-      outbound.sendJson("Quitting...");
+    private static void quit(QueryStringParser parser, Subscriber subscriber) {
+      outbound.sendJson(ResponseBuilder.createDataResponse(parser,"Quitting..."));
       quitAndUnsubscribe(subscriber);
     }
 
@@ -140,7 +142,7 @@ public class FullBroadcaster {
      */
     private static void subscribeToMatch(Subscriber subscriber, QueryStringParser parser) {
       if (parser.getParams().size() != 3) {
-        outbound.sendJson("Invalid request");
+        outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_INVALID_REQUEST)));
         return;
       }
       final Long tournamentID = Long.parseLong(parser.getParams().get(0));
@@ -152,35 +154,40 @@ public class FullBroadcaster {
 
       if (match.status == 2) {
         // Match is finished, no subscription possible
-        outbound.sendJson("Match is finished");
+        outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_MATCH_FINISHED)));
         return;
       }
 
       // First, send match record
-      outbound.sendJson(match);
+      outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), match));
 
       // Second, send handrecord
-      outbound.sendJson(Handrecord.findById(sessionID));
+      outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), Handrecord.findById(sessionID)));
 
       // Third, subscribe to the match channel
       subscriptionChannel = ChannelManager.getInstance().subscribe(subscriber, sessionID, matchID);
 
       // Fourth, send play records... (Send all play records that will never be published anymore)
       List<Play> plays = Play.find("sessionid = ? and matchid = ? and playid <= ? order by playid ASC", sessionID, matchID, subscriptionChannel.lastPublishedPlayID).fetch();
-      outbound.sendJson(plays);
+      outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), plays));
 
       // Fifth, send result records... (Send all result records that will never be published anymore)
       List<Result> results = Result.find("sessionid = ? and matchid = ? and resultid <= ? order by resultid ASC", sessionID, matchID, subscriptionChannel.lastPublishedResultID).fetch();
-      outbound.sendJson(results);
+      outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), results));
 
     }
 
     /**
      * Get all events (tournaments)
      */
-    private static void getTournaments() {
+    private static void getTournaments(QueryStringParser parser) {
       //TODO: Handle status (do not return status 2)
-      outbound.sendJson(Tournament.findAll());
+      List<Tournament> tournaments = Tournament.findAll();
+      if (!tournaments.isEmpty()) {
+        outbound.sendJson(ResponseBuilder.createDataResponse(parser, tournaments));
+      } else {
+        outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_NO_DATA_AVAILABLE)));
+      }
     }
 
     /**
@@ -188,12 +195,20 @@ public class FullBroadcaster {
      * @param parser
      */
     private static void getTournament(QueryStringParser parser) {
+      Response response = new Response();
+      response.setRequest(parser.getQueryString());
       if (parser.getParams().size() != 1) {
-        outbound.sendJson("Invalid request");
+        outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_INVALID_REQUEST)));
         return;
       }
+
       final Long tournamentID = Long.parseLong(parser.getParams().get(0));
-      outbound.sendJson(Tournament.findById(tournamentID));
+      Tournament tournament = Tournament.findById(tournamentID);
+      if (tournament != null) {
+        outbound.sendJson(ResponseBuilder.createDataResponse(parser, tournament));
+      } else {
+        outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_NO_DATA_AVAILABLE)));
+      }
     }
 
     /**
@@ -202,11 +217,17 @@ public class FullBroadcaster {
      */
     private static void getTournamentSessions(QueryStringParser parser) {
       if (parser.getParams().size() != 1) {
-        outbound.sendJson("Invalid request");
+        outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_INVALID_REQUEST)));
         return;
       }
+
       final Long tournamentID = Long.parseLong(parser.getParams().get(0));
-      outbound.sendJson(Session.find("tournament.tournamentid = ? and status <> ?", tournamentID, 2).fetch());
+      List<Session> sessions = Session.find("tournament.tournamentid = ? and status <> ?", tournamentID, 2L).fetch();
+      if (!sessions.isEmpty()) {
+        outbound.sendJson(ResponseBuilder.createDataResponse(parser, sessions));
+      } else {
+        outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_NO_DATA_AVAILABLE)));
+      }
     }
 
     /**
@@ -214,13 +235,21 @@ public class FullBroadcaster {
      * @param parser
      */
     private static void getSession(QueryStringParser parser) {
+      Response response = new Response();
+      response.setRequest(parser.getQueryString());
       if (parser.getParams().size() != 2) {
-        outbound.sendJson("Invalid request");
+        outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_INVALID_REQUEST)));
         return;
       }
       final Long tournamentID = Long.parseLong(parser.getParams().get(0));
       final Long sessionID = Long.parseLong(parser.getParams().get(1));
-      outbound.sendJson(Session.find("tournament.tournamentid = ? and sessionid = ?", tournamentID, sessionID).first());
+
+      Session session = Session.find("tournament.tournamentid = ? and sessionid = ?", tournamentID, sessionID).first();
+      if (session != null) {
+        outbound.sendJson(ResponseBuilder.createDataResponse(parser, session));
+      } else {
+        outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_NO_DATA_AVAILABLE)));
+      }
     }
 
     /**
@@ -229,12 +258,17 @@ public class FullBroadcaster {
      */
     private static void getSessionMatches(QueryStringParser parser) {
       if (parser.getParams().size() != 2) {
-        outbound.sendJson("Invalid request");
+        outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_INVALID_REQUEST)));
         return;
       }
       final Long tournamentID = Long.parseLong(parser.getParams().get(0));
       final Long sessionID = Long.parseLong(parser.getParams().get(1));
-      outbound.sendJson(Match.find("sessionid = ? and status <> ?", sessionID, 2).fetch());
+      List<Match> matches = Match.find("sessionid = ? and status <> ?", sessionID, 2L).fetch();
+      if (!matches.isEmpty()) {
+        outbound.sendJson(ResponseBuilder.createDataResponse(parser, matches));
+      } else {
+        outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_NO_DATA_AVAILABLE)));
+      }
     }
     
     private static void quitAndUnsubscribe(Subscriber subscriber) {
