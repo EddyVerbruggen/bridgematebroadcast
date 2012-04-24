@@ -38,6 +38,17 @@ public class QueryStringParser {
     }
   }
 
+  public boolean assertParamsNumeric() {
+    try {
+      for (String param : params) {
+        Long.parseLong(param);
+      }
+    } catch (NumberFormatException e) {
+      return false;
+    }
+    return true;
+  }
+  
   public String getCommand() {
     return command;
   }

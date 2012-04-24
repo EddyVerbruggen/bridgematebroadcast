@@ -22,18 +22,20 @@ public class ResponseBuilder {
     return response;
   }
 
-  public static Response createDataResponse(String request, Object data) {
+  public static Response createDataResponse(String request, String responseType, Object data) {
     Response response = new Response();
     response.setRequest(request);
     response.setSuccess(true);
+    response.setResponseType(responseType);
     response.setResponse(data);
     return response;
   }
 
-  public static Response createDataResponse(QueryStringParser parser, Object data) {
+  public static Response createDataResponse(QueryStringParser parser, String responseType, Object data) {
     Response response = new Response();
     response.setRequest(parser.getQueryString());
     response.setSuccess(true);
+    response.setResponseType(responseType);
     response.setResponse(data);
     return response;
   }

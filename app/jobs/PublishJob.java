@@ -1,5 +1,6 @@
 package jobs;
 
+import controllers.ResponseBuilder;
 import models.Match;
 import models.MatchID;
 import models.Play;
@@ -29,8 +30,6 @@ import java.util.Set;
 @Every("10s")
 public class PublishJob extends Job {
 
-  private int i;
-  
   @Override
   public void doJob() throws Exception {
     Logger.info("Publishing....");
@@ -68,7 +67,7 @@ public class PublishJob extends Job {
     // 1. Check on and send new Play records
     List<Play> plays = Play.find("sessionid = ? and matchid = ? and playid > ? order by playid ASC", sessionID, matchID, channel.lastPublishedPlayID).fetch();
     if (plays != null && plays.size() > 0) {
-      channel.publish(plays);
+      channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Play", plays));
       Play lastPlayRecord = plays.get(plays.size() - 1);
       channel.lastPublishedPlayID = lastPlayRecord.playid;
     } else {
@@ -78,7 +77,7 @@ public class PublishJob extends Job {
     // 2. Check on and send new Result records
     List<Result> results = Result.find("sessionid = ? and matchid = ? and resultid > ? order by resultid ASC", sessionID, matchID, channel.lastPublishedResultID).fetch();
     if (results != null && results.size() > 0) {
-      channel.publish(results);
+      channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Result", results));
       Result lastResultRecord = results.get(results.size() - 1);
       channel.lastPublishedResultID = lastResultRecord.resultid;
     } else {
@@ -90,7 +89,7 @@ public class PublishJob extends Job {
     Match match = Match.findById(matchIDObj);
     if (match.isFinished()) {
       // Publish match object, since match is finished
-      channel.publish(match);
+      channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Match", match));
       isMatchFinished = true;
     } else {
       Logger.info("Match not finished yet");

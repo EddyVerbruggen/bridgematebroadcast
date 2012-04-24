@@ -39,7 +39,7 @@ public class FullBroadcaster {
           return;
         } else {
           Logger.info("Successfully logged on " + username);
-          outbound.sendJson(ResponseBuilder.createDataResponse("", "Successfully logged on " + username));
+          outbound.sendJson(ResponseBuilder.createDataResponse("", "", "Successfully logged on " + username));
         }
       }
 
@@ -89,7 +89,7 @@ public class FullBroadcaster {
 
     private static void handleChannelEvent(Object channelEvent) {
       Logger.info("handleChannelEvent " + channelEvent);
-      outbound.sendJson(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", channelEvent));
+      outbound.sendJson(channelEvent);
     }
 
     private static void handleClientEvent(Subscriber subscriber, WebSocketEvent clientEvent) {
@@ -130,7 +130,7 @@ public class FullBroadcaster {
     }
 
     private static void quit(QueryStringParser parser, Subscriber subscriber) {
-      outbound.sendJson(ResponseBuilder.createDataResponse(parser,"Quitting..."));
+      outbound.sendJson(ResponseBuilder.createDataResponse(parser, "", "Quitting..."));
       quitAndUnsubscribe(subscriber);
     }
 
@@ -159,21 +159,21 @@ public class FullBroadcaster {
       }
 
       // First, send match record
-      outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), match));
+      outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), "Match", match));
 
       // Second, send handrecord
-      outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), Handrecord.findById(sessionID)));
+      outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), "Handrecord", Handrecord.findById(sessionID)));
 
       // Third, subscribe to the match channel
       subscriptionChannel = ChannelManager.getInstance().subscribe(subscriber, sessionID, matchID);
 
       // Fourth, send play records... (Send all play records that will never be published anymore)
       List<Play> plays = Play.find("sessionid = ? and matchid = ? and playid <= ? order by playid ASC", sessionID, matchID, subscriptionChannel.lastPublishedPlayID).fetch();
-      outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), plays));
+      outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), "Play", plays));
 
       // Fifth, send result records... (Send all result records that will never be published anymore)
       List<Result> results = Result.find("sessionid = ? and matchid = ? and resultid <= ? order by resultid ASC", sessionID, matchID, subscriptionChannel.lastPublishedResultID).fetch();
-      outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), results));
+      outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), "Result", results));
 
     }
 
@@ -184,7 +184,7 @@ public class FullBroadcaster {
       //TODO: Handle status (do not return status 2)
       List<Tournament> tournaments = Tournament.findAll();
       if (!tournaments.isEmpty()) {
-        outbound.sendJson(ResponseBuilder.createDataResponse(parser, tournaments));
+        outbound.sendJson(ResponseBuilder.createDataResponse(parser, "Tournament", tournaments));
       } else {
         outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_NO_DATA_AVAILABLE)));
       }
@@ -197,7 +197,7 @@ public class FullBroadcaster {
     private static void getTournament(QueryStringParser parser) {
       Response response = new Response();
       response.setRequest(parser.getQueryString());
-      if (parser.getParams().size() != 1) {
+      if (parser.getParams().size() != 1 || !parser.assertParamsNumeric()) {
         outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_INVALID_REQUEST)));
         return;
       }
@@ -205,7 +205,7 @@ public class FullBroadcaster {
       final Long tournamentID = Long.parseLong(parser.getParams().get(0));
       Tournament tournament = Tournament.findById(tournamentID);
       if (tournament != null) {
-        outbound.sendJson(ResponseBuilder.createDataResponse(parser, tournament));
+        outbound.sendJson(ResponseBuilder.createDataResponse(parser, "Tournament", tournament));
       } else {
         outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_NO_DATA_AVAILABLE)));
       }
@@ -213,10 +213,10 @@ public class FullBroadcaster {
 
     /**
      * Get all sessions for the event (tournament)
-     * @param parser
+     * @param parser contains the query string
      */
     private static void getTournamentSessions(QueryStringParser parser) {
-      if (parser.getParams().size() != 1) {
+      if (parser.getParams().size() != 1 || !parser.assertParamsNumeric()) {
         outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_INVALID_REQUEST)));
         return;
       }
@@ -224,7 +224,7 @@ public class FullBroadcaster {
       final Long tournamentID = Long.parseLong(parser.getParams().get(0));
       List<Session> sessions = Session.find("tournament.tournamentid = ? and status <> ?", tournamentID, 2L).fetch();
       if (!sessions.isEmpty()) {
-        outbound.sendJson(ResponseBuilder.createDataResponse(parser, sessions));
+        outbound.sendJson(ResponseBuilder.createDataResponse(parser, "Session", sessions));
       } else {
         outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_NO_DATA_AVAILABLE)));
       }
@@ -232,12 +232,12 @@ public class FullBroadcaster {
 
     /**
      * Get session details
-     * @param parser
+     * @param parser contains the query string
      */
     private static void getSession(QueryStringParser parser) {
       Response response = new Response();
       response.setRequest(parser.getQueryString());
-      if (parser.getParams().size() != 2) {
+      if (parser.getParams().size() != 2 || !parser.assertParamsNumeric()) {
         outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_INVALID_REQUEST)));
         return;
       }
@@ -246,7 +246,7 @@ public class FullBroadcaster {
 
       Session session = Session.find("tournament.tournamentid = ? and sessionid = ?", tournamentID, sessionID).first();
       if (session != null) {
-        outbound.sendJson(ResponseBuilder.createDataResponse(parser, session));
+        outbound.sendJson(ResponseBuilder.createDataResponse(parser, "Session", session));
       } else {
         outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_NO_DATA_AVAILABLE)));
       }
@@ -254,10 +254,10 @@ public class FullBroadcaster {
 
     /**
      * Get all matches for the session
-     * @param parser
+     * @param parser contains the query string
      */
     private static void getSessionMatches(QueryStringParser parser) {
-      if (parser.getParams().size() != 2) {
+      if (parser.getParams().size() != 2 || !parser.assertParamsNumeric()) {
         outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_INVALID_REQUEST)));
         return;
       }
@@ -265,7 +265,7 @@ public class FullBroadcaster {
       final Long sessionID = Long.parseLong(parser.getParams().get(1));
       List<Match> matches = Match.find("sessionid = ? and status <> ?", sessionID, 2L).fetch();
       if (!matches.isEmpty()) {
-        outbound.sendJson(ResponseBuilder.createDataResponse(parser, matches));
+        outbound.sendJson(ResponseBuilder.createDataResponse(parser, "Match", matches));
       } else {
         outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_NO_DATA_AVAILABLE)));
       }

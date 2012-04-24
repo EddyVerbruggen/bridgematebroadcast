@@ -4,7 +4,7 @@ public class Response {
 
   private String request;
   private boolean success;
-  
+  private String responseType = "";
   private Error error;
   private Object response;
 
@@ -38,5 +38,13 @@ public class Response {
 
   public void setResponse(Object response) {
     this.response = response;
+  }
+
+  public String getResponseType() {
+    return responseType;
+  }
+
+  public void setResponseType(String responseType) {
+    this.responseType = responseType;
   }
 }
