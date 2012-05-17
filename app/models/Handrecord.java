@@ -2,12 +2,10 @@ package models;
 
 import play.db.jpa.GenericModel;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
+import javax.persistence.*;
 
 @Entity
+@Table(name = "handrecord")
 public class Handrecord extends GenericModel {
   
   @Id
