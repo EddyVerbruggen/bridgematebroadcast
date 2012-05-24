@@ -1,22 +1,23 @@
-package models;
+package models.livefeed;
 
+import models.HandRecordID;
 import play.db.jpa.GenericModel;
 
 import javax.persistence.*;
 
 @Entity
-public class Handrecord extends GenericModel {
-  
+public class LivefeedHandrecord extends GenericModel {
+
   @EmbeddedId
   public HandRecordID handRecordID;
-  
+
 //  @Id
 //  public Long sessionID;
 //  @OneToOne
 //  @JoinColumn(name = "sessionid", referencedColumnName = "sessionid")
-//  public Session session;
+//  public LivefeedSession session;
 //  public Long boardNumber;
-  
+
   public String north;
   public String south;
   public String east;

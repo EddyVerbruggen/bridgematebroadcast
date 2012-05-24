@@ -1,19 +1,20 @@
-package models;
+package models.livefeed;
 
+import models.Match;
 import play.db.jpa.GenericModel;
 
 import javax.persistence.*;
 import java.util.Date;
 
 @Entity
-public class Result extends GenericModel {
+public class LivefeedResult extends GenericModel {
 
   @Id
   public Long resultid;
 
   @ManyToOne(optional = false)
   @JoinColumns({@JoinColumn(name = "matchid", referencedColumnName = "matchid"), @JoinColumn(name = "sessionid", referencedColumnName = "sessionid")})
-  public Match match;
+  public LivefeedMatch match;
 
   public Long externalid;
   public Long roundnumber;
