@@ -15,6 +15,10 @@ public class LivefeedTestDataJob extends Job {
 
   static final Long TOURNAMENTID = 54253876L;
   static final Long SESSIONID = 56066789L;
+  
+  static final Long LAST_PLAYID = 5906L;
+  static final Long LAST_RESULTID = 142L;
+  
   //"2007-10-11 03:17:30"
   static Date startOfTestData;
 
@@ -97,9 +101,7 @@ public class LivefeedTestDataJob extends Job {
     }
 
     // Let's see if we are done inserting all play and result records
-    List<LivefeedPlay> playsRemaining = LivefeedPlay.find("playid > ?", lastInsertedPlayID).fetch();
-    List<LivefeedResult> resultsRemaining = LivefeedResult.find("resultid > ?", lastInsertedResultID).fetch();
-    if (playsRemaining.isEmpty() && resultsRemaining.isEmpty()) {
+    if (LAST_PLAYID.compareTo(lastInsertedPlayID) == 0 && LAST_RESULTID.compareTo(lastInsertedResultID) == 0) {
       status = Status.FINISHED;
     }
   }

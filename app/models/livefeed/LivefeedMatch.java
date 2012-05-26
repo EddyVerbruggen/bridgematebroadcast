@@ -5,8 +5,10 @@ import play.db.jpa.GenericModel;
 
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
+import javax.persistence.Table;
 
 @Entity
+@Table(name = "livefeedmatch")
 public class LivefeedMatch extends GenericModel {
 
   @EmbeddedId

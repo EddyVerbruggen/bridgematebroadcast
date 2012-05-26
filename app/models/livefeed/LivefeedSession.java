@@ -2,13 +2,11 @@ package models.livefeed;
 
 import play.db.jpa.GenericModel;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
 import java.util.Date;
 
 @Entity
+@Table(name="livefeedsession")
 public class LivefeedSession extends GenericModel {
 
   @Id

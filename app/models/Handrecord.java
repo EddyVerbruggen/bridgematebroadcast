@@ -5,6 +5,7 @@ import play.db.jpa.GenericModel;
 import javax.persistence.*;
 
 @Entity
+@Table(name = "handrecord")
 public class Handrecord extends GenericModel {
   
   @EmbeddedId

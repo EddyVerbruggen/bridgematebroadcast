@@ -6,6 +6,7 @@ import play.db.jpa.GenericModel;
 import javax.persistence.*;
 
 @Entity
+@Table(name="livefeedhandrecord")
 public class LivefeedHandrecord extends GenericModel {
 
   @EmbeddedId

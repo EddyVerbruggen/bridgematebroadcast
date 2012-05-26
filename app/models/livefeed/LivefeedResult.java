@@ -7,6 +7,7 @@ import javax.persistence.*;
 import java.util.Date;
 
 @Entity
+@Table(name="livefeedresult")
 public class LivefeedResult extends GenericModel {
 
   @Id
