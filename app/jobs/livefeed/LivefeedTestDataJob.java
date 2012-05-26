@@ -98,7 +98,7 @@ public class LivefeedTestDataJob extends Job {
 
     // Let's see if we are done inserting all play and result records
     List<LivefeedPlay> playsRemaining = LivefeedPlay.find("playid > ?", lastInsertedPlayID).fetch();
-    List<LivefeedPlay> resultsRemaining = LivefeedPlay.find("resultid > ?", lastInsertedResultID).fetch();
+    List<LivefeedResult> resultsRemaining = LivefeedResult.find("resultid > ?", lastInsertedResultID).fetch();
     if (playsRemaining.isEmpty() && resultsRemaining.isEmpty()) {
       status = Status.FINISHED;
     }
