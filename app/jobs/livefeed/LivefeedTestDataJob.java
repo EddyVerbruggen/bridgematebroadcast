@@ -18,7 +18,7 @@ public class LivefeedTestDataJob extends Job {
   
   static final Long LAST_PLAYID = 5906L;
   static final Long LAST_RESULTID = 142L;
-  
+
   //"2007-10-11 03:17:30"
   static Date startOfTestData;
 
@@ -101,7 +101,7 @@ public class LivefeedTestDataJob extends Job {
     }
 
     // Let's see if we are done inserting all play and result records
-    if (LAST_PLAYID.compareTo(lastInsertedPlayID) == 0 && LAST_RESULTID.compareTo(lastInsertedResultID) == 0) {
+    if (LAST_PLAYID.compareTo(lastInsertedPlayID) < 1 && LAST_RESULTID.compareTo(lastInsertedResultID) < 1) {
       status = Status.FINISHED;
     }
   }
@@ -115,7 +115,7 @@ public class LivefeedTestDataJob extends Job {
         match.status = 2L;
         match.save();
       }
-    } else if (nrOfSecondsMatchIsFinished == 10) {
+    } else if (nrOfSecondsMatchIsFinished > 10) {
       status = Status.START;
     }
 
@@ -124,6 +124,9 @@ public class LivefeedTestDataJob extends Job {
 
   private void doStart() {
     Logger.info("doStart");
+
+    resetStatus();
+
     // Deletes all stuff from the actual tables
     deleteOldData();
 
@@ -147,6 +150,15 @@ public class LivefeedTestDataJob extends Job {
     }
 
     status = Status.RUNNING;
+  }
+
+  private void resetStatus() {
+    nrOfSecondsSimulating = 0;
+    nrOfSecondsMatchIsFinished = 0;
+
+    lastInsertedPlayID = 0L;
+    lastInsertedResultID = 0L;
+    lastInsertedBoardNumber = 0L;
   }
 
   private Result createResult(LivefeedResult livefeedResult) {
