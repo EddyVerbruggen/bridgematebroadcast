@@ -1,4 +1,4 @@
-package jobs;
+package jobs.testdatacreator;
 
 import models.*;
 import play.jobs.Job;
@@ -7,7 +7,7 @@ import play.jobs.OnApplicationStart;
 import java.util.Calendar;
 import java.util.Date;
 
-@OnApplicationStart
+//@OnApplicationStart
 public class TestDataCreateSessionAndMatchOnStartupJob extends Job {
 
   static final Long TOURNAMENTID = 1L;

@@ -1,10 +1,7 @@
 package jobs;
 
 import controllers.ResponseBuilder;
-import models.Match;
-import models.MatchID;
-import models.Play;
-import models.Result;
+import models.*;
 import models.channel.Channel;
 import models.channel.ChannelID;
 import models.channel.ChannelManager;
@@ -27,7 +24,7 @@ import java.util.Set;
  */
 
 @OnApplicationStart(async = true)
-@Every("10s")
+@Every("3s")
 public class PublishJob extends Job {
 
   @Override
@@ -64,8 +61,23 @@ public class PublishJob extends Job {
   private boolean handleMatchSubscription(Channel channel, Long sessionID, Long matchID) {
     boolean isMatchFinished = false;
 
-    // 1. Check on and send new Play records
+    // 1. Check if new handrecords need to be sent (loop through all play records and find out if Handrecord has been sent already)
     List<Play> plays = Play.find("sessionid = ? and matchid = ? and playid > ? order by playid ASC", sessionID, matchID, channel.lastPublishedPlayID).fetch();
+    if (plays != null) {
+      for (Play play : plays) {
+        if (!channel.publishedBoardNumbers.contains(play.boardnumber)) {
+          HandRecordID id = new HandRecordID();
+          id.boardNumber = play.boardnumber;
+          id.sessionID = sessionID;
+          Handrecord handrecord = Handrecord.findById(id);
+          channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemante Broadcast server", "Handrecord", handrecord));
+          channel.publishedBoardNumbers.add(play.boardnumber);
+        }
+      }
+    }
+    
+    // 2. Check on and send new Play records
+    // List<Play> plays = Play.find("sessionid = ? and matchid = ? and playid > ? order by playid ASC", sessionID, matchID, channel.lastPublishedPlayID).fetch();
     if (plays != null && plays.size() > 0) {
       channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Play", plays));
       Play lastPlayRecord = plays.get(plays.size() - 1);
@@ -74,7 +86,7 @@ public class PublishJob extends Job {
       Logger.info("no play records to publish");
     }
 
-    // 2. Check on and send new Result records
+    // 3. Check on and send new Result records
     List<Result> results = Result.find("sessionid = ? and matchid = ? and resultid > ? order by resultid ASC", sessionID, matchID, channel.lastPublishedResultID).fetch();
     if (results != null && results.size() > 0) {
       channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Result", results));
@@ -84,7 +96,7 @@ public class PublishJob extends Job {
       Logger.info("no result records to publish");
     }
     
-    // 3. Check if match is finished yet
+    // 4. Check if match is finished yet
     MatchID matchIDObj = new MatchID(matchID, sessionID); 
     Match match = Match.findById(matchIDObj);
     if (match.isFinished()) {

@@ -1,16 +1,14 @@
-package jobs;
+package jobs.testdatacreator;
 
 import models.Match;
 import models.MatchID;
 import models.Play;
 import models.Result;
-import play.db.jpa.JPA;
-import play.jobs.Every;
 import play.jobs.Job;
 
 import java.util.Calendar;
 
-@Every("20s")
+//@Every("20s")
 public class TestDataCreatorJob extends Job {
 
   Match testMatch;  

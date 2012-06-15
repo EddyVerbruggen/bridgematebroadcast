@@ -10,6 +10,7 @@ public class ResponseBuilder {
     Response response = new Response();
     response.setRequest(parser.getQueryString());
     response.setSuccess(false);
+    response.setResponseType("Error");
     response.setError(error);
     return response;
   }
@@ -18,6 +19,7 @@ public class ResponseBuilder {
     Response response = new Response();
     response.setRequest(queryString);
     response.setSuccess(false);
+    response.setResponseType("Error");
     response.setError(error);
     return response;
   }
