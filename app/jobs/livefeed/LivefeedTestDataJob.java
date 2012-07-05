@@ -65,11 +65,12 @@ public class LivefeedTestDataJob extends Job {
   private void doRunning() {
 
     Logger.info("doRunning for " + nrOfSecondsSimulating + " seconds ");
+    // obsolete
     Date systemDate = new Date(startOfTestData.getTime() + nrOfSecondsSimulating * 1000);
     Logger.info("System time is " + systemDate);
 
     //Insert play records created since previous insert
-    List<LivefeedPlay> livefeedPlayList = LivefeedPlay.find("playid > ? and timestamp < ?", lastInsertedPlayID, systemDate).fetch();
+    List<LivefeedPlay> livefeedPlayList = LivefeedPlay.find("playid > ? and playid <= ?", lastInsertedPlayID, lastInsertedPlayID + 1).fetch();
     for (LivefeedPlay livefeedPlay : livefeedPlayList) {
       // First, check if the handrecord should be inserted
       if (livefeedPlay.boardnumber > lastInsertedBoardNumber) {
@@ -92,7 +93,7 @@ public class LivefeedTestDataJob extends Job {
     }
 
     //Insert result records created since previous insert
-    List<LivefeedResult> livefeedResultList = LivefeedResult.find("resultid > ? and timestamp < ?", lastInsertedResultID, systemDate).fetch();
+    List<LivefeedResult> livefeedResultList = LivefeedResult.find("resultid > ? and resultid <= ?", lastInsertedResultID, lastInsertedResultID + 1).fetch();
     for (LivefeedResult livefeedResult : livefeedResultList) {
       Logger.info("Insert record into result with resultid " + livefeedResult.resultid);
       Result result = createResult(livefeedResult);

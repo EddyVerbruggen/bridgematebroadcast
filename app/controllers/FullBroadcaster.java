@@ -184,6 +184,8 @@ public class FullBroadcaster {
       List<Result> results = Result.find("sessionid = ? and matchid = ? and resultid <= ? order by resultid ASC", sessionID, matchID, subscriptionChannel.lastPublishedResultID).fetch();
       outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), "Result", results));
 
+      // Send a history finished response
+      outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), "System", "Sending history records finished"));
     }
 
     /**
