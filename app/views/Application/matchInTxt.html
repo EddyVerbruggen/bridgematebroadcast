@@ -1,0 +1,109 @@
+#{extends 'main.html' /}
+#{set title:'Test client data publisher' /}
+
+<h1>Publishing all events for match 1102 in txt lines</h1>
+
+<pre>
+  <div id="thread"></div>
+</pre>
+
+<div id="newMessage">
+  subscribeToMatch(54253876,56066789,1102)
+  <input type="text" id="message" placeholder="type a command" value="subscribeToMatch(54253876,56066789,1102)"/>
+  <input type="submit" value="send" id="send"/>
+</div>
+
+<!--
+<div id="examples">
+  <select name="example" onchange="if (this.value != '') {document.getElementById('message').value=this.value; document.getElementById('send').click()}">
+    <option value="">choose a command..</option>
+    <option value="getTournaments()">getTournaments()</option>
+    <option value="getTournament(54253876)">getTournament(54253876)</option>
+    <option value="getTournamentSessions(54253876)">getTournamentSessions(54253876)</option>
+    <option value="getSession(54253876,56066789)">getSession(54253876,56066789)</option>
+    <option value="getSessionMatches(54253876,56066789)">getSessionMatches(54253876,56066789)</option>
+    <option value="subscribeToMatch(54253876,56066789,1101)">subscribeToMatch(54253876,56066789,1101)</option>
+    <option value="subscribeToMatch(54253876,56066789,1102)">subscribeToMatch(54253876,56066789,1102)</option>
+    <option value="subscribeToMatch(54253876,56066789,1103)">subscribeToMatch(54253876,56066789,1103)</option>
+    <option value="subscribeToMatch(54253876,56066789,1104)">subscribeToMatch(54253876,56066789,1104)</option>
+    <option value="subscribeToMatch(54253876,56066789,1105)">subscribeToMatch(54253876,56066789,1105)</option>
+    <option value="subscribeToMatch(54253876,56066789,1106)">subscribeToMatch(54253876,56066789,1106)</option>
+    <option value="subscribeToMatch(54253876,56066789,1107)">subscribeToMatch(54253876,56066789,1107)</option>
+    <option value="subscribeToMatch(54253876,56066789,1108)">subscribeToMatch(54253876,56066789,1108)</option>
+    <option value="subscribeToMatch(54253876,56066789,1109)">subscribeToMatch(54253876,56066789,1109)</option>
+    <option value="subscribeToMatch(54253876,56066789,1110)">subscribeToMatch(54253876,56066789,1110)</option>
+    <option value="subscribeToMatch(54253876,56066789,1111)">subscribeToMatch(54253876,56066789,1111)</option>
+    <option value="subscribeToMatch(54253876,56066789,1112)">subscribeToMatch(54253876,56066789,1112)</option>
+    <option value="unsubscribe()">unsubscribe()</option>
+  </select> or
+</div>
+-->
+
+<script type="text/javascript">
+
+    // Create a socket
+//    var socket = new WebSocket('ws://broadcast-test.bridgemate.com:9001/fullsocket?username=test&password=test');
+    var socket = new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=test&password=test');
+
+    // Message received on the socket
+    socket.onmessage = function(event) {
+      try {
+//        $('#thread').append("Start parsing: " + event.data).append("<br/><br/>");
+        var response = JSON.parse(event.data);
+        if (response.success) {
+          if (JSON.stringify(response.responseType) == "\"Match\"") {
+            $('#thread')
+              .append("MATCH ID " + JSON.stringify(response.response.id.matchid))
+              .append(" Status " + JSON.stringify(response.response.status))
+              .append("<br/>");
+          } else if (JSON.stringify(response.responseType) == "\"Handrecord\"") {
+            $('#thread').append("HANDRECORD BOARD " + JSON.stringify(response.response.handRecordID.boardNumber)).append("<br/>");
+          } else if (JSON.stringify(response.responseType) == "\"Play\"") {
+            $(response.response).each(function(i, item) {
+                $('#thread')
+                  .append("PLAY ID " + JSON.stringify(item.playid))
+                  .append(" Board:" + JSON.stringify(item.boardnumber))
+                  .append(" " + JSON.stringify(item.direction))
+                  .append(" " + JSON.stringify(item.action))
+                  .append("<br/>");
+              }
+            );
+          } else if (JSON.stringify(response.responseType) == "\"Result\"") {
+            $(response.response).each(function(i, item) {
+                $('#thread')
+                  .append("RESULT")
+                  .append(" Board:" + JSON.stringify(item.boardnumber))
+                  .append(" " + JSON.stringify(item.contract))
+                  .append(" " + JSON.stringify(item.declarer))
+                  .append(" " + JSON.stringify(item.result))
+                  .append("<br/>");
+              }
+            );
+          } else {
+            $('#thread').append("Received " + JSON.stringify(response)).append("<br/><br/>");
+          }
+        }
+
+      } catch (e) {
+        $('#thread').append("No valid JSON data: " + e).append("<br/><br/>");
+      }
+
+      //$('#thread').append(formatJson(event.data.responseType)).append("<br/><br/>");
+
+      document.getElementById("thread").scrollTop = document.getElementById("thread").scrollHeight;
+    }
+    
+    $('#send').click(function(e) {
+        var message = $('#message').val()
+        $('#message').val('')
+        socket.send(message)
+    });
+    
+    $('#message').keypress(function(e) {
+        if(e.charCode == 13 || e.keyCode == 13) {
+            $('#send').click()
+            e.preventDefault()
+        }
+    })
+    
+</script>

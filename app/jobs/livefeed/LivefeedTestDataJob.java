@@ -14,18 +14,6 @@ public class LivefeedTestDataJob extends Job {
   static final Long TOURNAMENTID = 54253876L;
   static final Long SESSIONID = 56066789L;
   
-  static final Long LAST_PLAYID = 5906L;
-  static final Long LAST_RESULTID = 142L;
-
-  //"2007-10-11 03:17:30"
-  static Date startOfTestData;
-
-  static {
-    Calendar cal = Calendar.getInstance();
-    cal.set(2007, 9, 11, 3, 17, 30);
-    startOfTestData = cal.getTime();
-  }
-
   enum Status {
     START,
     RUNNING,
@@ -40,7 +28,6 @@ public class LivefeedTestDataJob extends Job {
   private long nrOfSecondsMatchIsFinished = 0;
 
   private Long lastInsertedPlayID = 0L;
-//  private Long lastInsertedResultID = 0L;
   private Map<MatchID, Long> currentBoardNumberPerMatch = new HashMap<MatchID, Long>();
   private List<Long> insertedBoardNumbers = new ArrayList<Long>();
 
@@ -62,10 +49,7 @@ public class LivefeedTestDataJob extends Job {
 
   private void doRunning() {
 
-    Logger.info("doRunning for " + nrOfSecondsSimulating + " seconds ");
-    // obsolete
-    Date systemDate = new Date(startOfTestData.getTime() + nrOfSecondsSimulating * 1000);
-    Logger.info("System time is " + systemDate);
+    Logger.debug("doRunning for " + nrOfSecondsSimulating + " seconds ");
 
     //Insert play records created since previous insert
     List<LivefeedPlay> livefeedPlayList = LivefeedPlay.find("playid > ? and playid <= ?", lastInsertedPlayID, lastInsertedPlayID + 1).fetch();
@@ -84,20 +68,19 @@ public class LivefeedTestDataJob extends Job {
         insertedBoardNumbers.add(livefeedPlay.boardnumber);
       }
 
+      // Create the play record (save it after result record of previous board is inserted)
       Logger.info("Insert record into play with playid " + livefeedPlay.playid);
       Play play = createPlay(livefeedPlay);
-      play.save();
-      lastInsertedPlayID = play.playid;
-      
+
       // Set the current board number of the match
       Long currentMatchBoardNumber = currentBoardNumberPerMatch.get(play.match.id);
 
       if (currentMatchBoardNumber == null) {
         // No current board number yet, set it
         currentBoardNumberPerMatch.put(play.match.id, play.boardnumber);  
+        Logger.info("Setting current board number for match " + play.match.id + " to " + play.boardnumber);
       } else if (currentMatchBoardNumber != play.boardnumber) {
         // Board number has changed since previous play, so there should be a result record and we should update the current boardnumber
-        
         List<LivefeedResult> livefeedResultList = LivefeedResult.find("match.id.sessionid = ? and match.id.matchid = ? and boardnumber = ?", livefeedPlay.match.id.sessionid, livefeedPlay.match.id.matchid, currentMatchBoardNumber).fetch();
         for (LivefeedResult livefeedResult : livefeedResultList) {
           Logger.info("Insert record into result with resultid " + livefeedResult.resultid);
@@ -106,20 +89,27 @@ public class LivefeedTestDataJob extends Job {
         }
 
         currentBoardNumberPerMatch.put(play.match.id, play.boardnumber);
+        Logger.info("Setting current board number for match " + play.match.id + " to " + play.boardnumber);
       }
+
+      // Save the play record
+      play.save();
+      lastInsertedPlayID = play.playid;
     }
 
-    //Insert result records created since previous insert
-//    List<LivefeedResult> livefeedResultList = LivefeedResult.find("resultid > ? and resultid <= ?", lastInsertedResultID, lastInsertedResultID + 1).fetch();
-//    for (LivefeedResult livefeedResult : livefeedResultList) {
-//      Logger.info("Insert record into result with resultid " + livefeedResult.resultid);
-//      Result result = createResult(livefeedResult);
-//      result.save();
-//      lastInsertedResultID = result.resultid;
-//    }
+    // Let's see if we are done inserting all play records
+    if (livefeedPlayList.isEmpty()) {
+      List<Match> matches = Match.findAll();
+      for (Match match : matches) {
+        // Last play is published, let's see if we still have a result to publish
+        List<LivefeedResult> livefeedResultList = LivefeedResult.find("match.id.sessionid = ? and match.id.matchid = ? and boardnumber = ?", match.id.sessionid, match.id.matchid, currentBoardNumberPerMatch.get(match.id)).fetch();
+        for (LivefeedResult livefeedResult : livefeedResultList) {
+          Logger.info("Insert record into result with resultid " + livefeedResult.resultid);
+          Result result = createResult(livefeedResult);
+          result.save();
+        }
+      }
 
-    // Let's see if we are done inserting all play and result records
-    if (LAST_PLAYID.compareTo(lastInsertedPlayID) < 1) {
       status = Status.FINISHED;
     }
   }
@@ -133,7 +123,7 @@ public class LivefeedTestDataJob extends Job {
         match.status = 2L;
         match.save();
       }
-    } else if (nrOfSecondsMatchIsFinished > 10) {
+    } else if (nrOfSecondsMatchIsFinished > 30) {
       status = Status.START;
     }
 
