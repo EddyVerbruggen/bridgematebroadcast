@@ -14,6 +14,7 @@ import play.mvc.WebSocketController;
 import play.libs.F.*;
 import play.mvc.Http.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static play.mvc.Http.WebSocketEvent.*;
@@ -167,12 +168,14 @@ public class FullBroadcaster {
       List<Play> plays = Play.find("sessionid = ? and matchid = ? and playid <= ? order by playid ASC", sessionID, matchID, subscriptionChannel.lastPublishedPlayID).fetch();
 
       // Third, send handrecords for boardnumbers that already have play records
+      List<Long> publishedBoardNumbers = new ArrayList<Long>();
       for (Play play : plays) {
-        if (!subscriptionChannel.publishedBoardNumbers.contains(play.boardnumber)) {
+        if (!publishedBoardNumbers.contains(play.boardnumber)) {
           HandRecordID id = new HandRecordID();
           id.sessionID = sessionID;
           id.boardNumber = play.boardnumber;
           outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), "Handrecord", Handrecord.findById(id)));
+          publishedBoardNumbers.add(play.boardnumber);
           subscriptionChannel.publishedBoardNumbers.add(play.boardnumber);
         }
       }

@@ -75,8 +75,18 @@ public class PublishJob extends Job {
         }
       }
     }
-    
-    // 2. Check on and send new Play records
+
+    // 2. Check on and send new Result records
+    List<Result> results = Result.find("sessionid = ? and matchid = ? and resultid > ? order by resultid ASC", sessionID, matchID, channel.lastPublishedResultID).fetch();
+    if (results != null && results.size() > 0) {
+      channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Result", results));
+      Result lastResultRecord = results.get(results.size() - 1);
+      channel.lastPublishedResultID = lastResultRecord.resultid;
+    } else {
+      Logger.info("no result records to publish");
+    }
+
+    // 3. Check on and send new Play records
     // List<Play> plays = Play.find("sessionid = ? and matchid = ? and playid > ? order by playid ASC", sessionID, matchID, channel.lastPublishedPlayID).fetch();
     if (plays != null && plays.size() > 0) {
       channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Play", plays));
@@ -86,16 +96,6 @@ public class PublishJob extends Job {
       Logger.info("no play records to publish");
     }
 
-    // 3. Check on and send new Result records
-    List<Result> results = Result.find("sessionid = ? and matchid = ? and resultid > ? order by resultid ASC", sessionID, matchID, channel.lastPublishedResultID).fetch();
-    if (results != null && results.size() > 0) {
-      channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Result", results));
-      Result lastResultRecord = results.get(results.size() - 1);
-      channel.lastPublishedResultID = lastResultRecord.resultid;
-    } else {
-      Logger.info("no result records to publish");
-    }
-    
     // 4. Check if match is finished yet
     MatchID matchIDObj = new MatchID(matchID, sessionID); 
     Match match = Match.findById(matchIDObj);
