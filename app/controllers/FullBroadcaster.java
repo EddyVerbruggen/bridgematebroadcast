@@ -110,6 +110,10 @@ public class FullBroadcaster {
             getSession(parser);
           } else if ("getSessionMatches".equals(parser.getCommand())) {
             getSessionMatches(parser);
+          } else if ("isSubscriptionAlive".equals(parser.getCommand())) {
+            isSubscriptionAlive(parser);
+          } else if ("unsubscribe".equals(parser.getCommand())) {
+            unsubscribe(parser);
           } else if ("subscribeToMatch".equals(parser.getCommand())) {
             subscribeToMatch(subscriber, parser);
           } else if ("quit".equals(parser.getCommand())) {
@@ -130,6 +134,25 @@ public class FullBroadcaster {
       }
     }
 
+    private static void unsubscribe(QueryStringParser parser) {
+      Long matchID = null;
+      if (subscriptionChannel != null) {
+        matchID = subscriptionChannel.channelID.getMatchID();
+        ChannelManager.getInstance().unsubscribe(subscriptionChannel, subscriber);
+        subscriptionChannel = null;
+      }
+      outbound.sendJson(ResponseBuilder.createDataResponse(parser, "System", "Unsubscribed from match " + (matchID != null ? matchID : "")));
+    }
+
+    private static void isSubscriptionAlive(QueryStringParser parser) {
+      if (subscriptionChannel != null) {
+        MatchID matchID = new MatchID(subscriptionChannel.channelID.getMatchID(), subscriptionChannel.channelID.getSessionID());
+        Match match = Match.findById(matchID);
+        outbound.sendJson(ResponseBuilder.createDataResponse(parser, "Match", match));
+      } else {
+        outbound.sendJson(ResponseBuilder.createDataResponse(parser, "System", "No match subscribed"));
+      }
+    }
     private static void quit(QueryStringParser parser, Subscriber subscriber) {
       outbound.sendJson(ResponseBuilder.createDataResponse(parser, "", "Quitting..."));
       quitAndUnsubscribe(subscriber);
