@@ -176,6 +176,11 @@ public class FullBroadcaster {
       MatchID matchIDObj = new MatchID(matchID, sessionID);
       Match match = Match.findById(matchIDObj);
 
+      if (match == null) {
+        outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_NO_DATA_AVAILABLE)));
+        return;
+      }
+
       if (match.status == 2) {
         // Match is finished, no subscription possible
         outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_MATCH_FINISHED)));
