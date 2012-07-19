@@ -34,16 +34,19 @@ public class LivefeedTestDataJob extends Job {
   @Override
   public void doJob() throws Exception {
     nrOfSecondsSimulating++;
-    if (Status.START.equals(status)) {
-      doStart();
-    }
+    // Only run the livefeed testdata job in testmode
+    if (play.Play.runningInTestMode()) {
+      if (Status.START.equals(status)) {
+        doStart();
+      }
 
-    if (Status.RUNNING.equals(status)) {
-      doRunning();
-    }
+      if (Status.RUNNING.equals(status)) {
+        doRunning();
+      }
 
-    if (Status.FINISHED.equals(status)) {
-      doFinished();
+      if (Status.FINISHED.equals(status)) {
+        doFinished();
+      }
     }
   }
 
@@ -70,7 +73,7 @@ public class LivefeedTestDataJob extends Job {
 
       // Create the play record (save it after result record of previous board is inserted)
       Logger.info("Insert record into play with playid " + livefeedPlay.playid);
-      Play play = createPlay(livefeedPlay);
+      PlayRecord play = createPlay(livefeedPlay);
 
       // Set the current board number of the match
       Long currentMatchBoardNumber = currentBoardNumberPerMatch.get(play.match.id);
@@ -189,8 +192,8 @@ public class LivefeedTestDataJob extends Job {
     return result;
   }
 
-  private Play createPlay(LivefeedPlay livefeedPlay) {
-    Play play = new Play();
+  private PlayRecord createPlay(LivefeedPlay livefeedPlay) {
+    PlayRecord play = new PlayRecord();
     play.playid = livefeedPlay.playid;
     play.match = createMatch(livefeedPlay.match);
     play.externalid = livefeedPlay.externalid;
@@ -264,7 +267,7 @@ public class LivefeedTestDataJob extends Job {
   }
 
   private void deleteOldData() {
-    Play.deleteAll();
+    PlayRecord.deleteAll();
     Result.deleteAll();
     Match.deleteAll();
     Handrecord.deleteAll();

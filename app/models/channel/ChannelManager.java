@@ -1,6 +1,6 @@
 package models.channel;
 
-import models.Play;
+import models.PlayRecord;
 import models.Result;
 import models.Subscriber;
 import play.Logger;
@@ -46,7 +46,7 @@ public class ChannelManager {
       channel.channelType = ChannelType.MATCH;
       channelMap.put(channel.channelID, channel);
 
-      Play play = Play.find("sessionid = ? and matchid = ? order by playid DESC", sessionID, matchID).first();
+      PlayRecord play = PlayRecord.find("sessionid = ? and matchid = ? order by playid DESC", sessionID, matchID).first();
       if (play != null) {
         channel.lastPublishedPlayID = play.playid;
       }

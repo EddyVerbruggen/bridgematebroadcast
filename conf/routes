@@ -6,6 +6,7 @@
 GET     /                                       Application.index
 GET     /poc.html                               Application.poc
 GET     /matchInTxt.html                        Application.matchInTxt
+GET     /multiMatches.html                        Application.multiMatches
 
 # Ignore favicon requests
 GET     /favicon.ico                            404

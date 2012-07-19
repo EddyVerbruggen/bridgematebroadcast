@@ -188,11 +188,11 @@ public class FullBroadcaster {
       // Second, subscribe to the match channel
       subscriptionChannel = ChannelManager.getInstance().subscribe(subscriber, sessionID, matchID);
 
-      List<Play> plays = Play.find("sessionid = ? and matchid = ? and playid <= ? order by playid ASC", sessionID, matchID, subscriptionChannel.lastPublishedPlayID).fetch();
+      List<PlayRecord> plays = PlayRecord.find("sessionid = ? and matchid = ? and playid <= ? order by playid ASC", sessionID, matchID, subscriptionChannel.lastPublishedPlayID).fetch();
 
       // Third, send handrecords for boardnumbers that already have play records
       List<Long> publishedBoardNumbers = new ArrayList<Long>();
-      for (Play play : plays) {
+      for (PlayRecord play : plays) {
         if (!publishedBoardNumbers.contains(play.boardnumber)) {
           HandRecordID id = new HandRecordID();
           id.sessionID = sessionID;

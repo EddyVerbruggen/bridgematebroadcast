@@ -7,7 +7,7 @@ import java.util.Date;
 
 @Entity
 @Table(name = "play")
-public class Play extends GenericModel {
+public class PlayRecord extends GenericModel {
   
   @Id
   public Long playid;

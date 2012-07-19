@@ -12,7 +12,11 @@ public class Application extends Controller {
       render();
   }
   
-  public static void matchInTxt(){
+  public static void matchInTxt() {
+    render();
+  }
+  
+  public static void multiMatches() {
     render();
   }
 

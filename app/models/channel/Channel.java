@@ -1,7 +1,5 @@
 package models.channel;
 
-import controllers.model.Response;
-import models.Play;
 import models.Subscriber;
 import play.libs.F;
 

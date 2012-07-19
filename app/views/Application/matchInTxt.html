@@ -48,7 +48,6 @@
     // Message received on the socket
     socket.onmessage = function(event) {
       try {
-//        $('#thread').append("Start parsing: " + event.data).append("<br/><br/>");
         var response = JSON.parse(event.data);
         if (response.success) {
           if (JSON.stringify(response.responseType) == "\"Match\"") {
@@ -92,7 +91,7 @@
 
       document.getElementById("thread").scrollTop = document.getElementById("thread").scrollHeight;
     }
-    
+
     $('#send').click(function(e) {
         var message = $('#message').val()
         $('#message').val('')
