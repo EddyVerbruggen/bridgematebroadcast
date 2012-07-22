@@ -15,6 +15,7 @@ import play.libs.F.*;
 import play.mvc.Http.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static play.mvc.Http.WebSocketEvent.*;
@@ -24,15 +25,18 @@ public class FullBroadcaster {
 
   public static class WebSocket extends WebSocketController {
 
-    private static Channel subscriptionChannel;
+    private static HashMap<String, Channel> subscriptionChannels = new HashMap<String, Channel>();
 
-    private static Subscriber subscriber;
+    private static HashMap<String, Subscriber> subscribers = new HashMap<String, Subscriber>();
 
     public static void stream(String username, String password) {
-      Logger.info("entered new fullbroadcaster");
+      Logger.info("entered new fullbroadcaster for outbound: " + WebSocket.outbound.toString());
 
-      loginSubscriber(username, password);
+      String websocketIdentifier = WebSocket.outbound.toString();
 
+      loginSubscriber(username, password, websocketIdentifier);
+
+      Subscriber subscriber = subscribers.get(websocketIdentifier);
       if (inbound.isOpen()) {
         if (subscriber == null) {
           Logger.info("Invalid username/password combination, disconnecting...");
@@ -48,6 +52,8 @@ public class FullBroadcaster {
         Logger.info("awaiting input...");
         WebSocketEvent clientEvent = null;
 
+        Channel subscriptionChannel = subscriptionChannels.get(websocketIdentifier);
+        
         if (subscriptionChannel == null) {
           Logger.info("awaiting input only from client...");
           // Not yet subscribed, so no subscriptionChannel. Waiting for client event.
@@ -73,18 +79,18 @@ public class FullBroadcaster {
         if (clientEvent != null) {
           Logger.info("received clientEvent " + clientEvent);
           // handle clientEvent
-          handleClientEvent(subscriber, clientEvent);
+          handleClientEvent(subscriber, clientEvent, subscriptionChannel, websocketIdentifier);
         }
       }
     }
 
-    private static void loginSubscriber(String username, String password) {
+    private static void loginSubscriber(String username, String password, String websocketIdentifier) {
       Logger.info("logging in subscriber [username = " + username + ", password = " + password + "]");
 
-      List<Subscriber> subscribers = Subscriber.find("loginname = ? and password = ? and active = '1'", username, password).fetch();
+      List<Subscriber> registeredSubscribers = Subscriber.find("loginname = ? and password = ? and active = '1'", username, password).fetch();
 
-      if (subscribers.size() == 1) {
-        subscriber = subscribers.get(0);
+      if (registeredSubscribers.size() == 1) {
+        subscribers.put(websocketIdentifier, registeredSubscribers.get(0));
       }
     }
 
@@ -93,7 +99,7 @@ public class FullBroadcaster {
       outbound.sendJson(channelEvent);
     }
 
-    private static void handleClientEvent(Subscriber subscriber, WebSocketEvent clientEvent) {
+    private static void handleClientEvent(Subscriber subscriber, WebSocketEvent clientEvent, Channel subscriptionChannel, String websocketIdentifier) {
       Logger.info("handleClientEvent " + clientEvent);
 
       for(String userMessage: TextFrame.match(clientEvent)) {
@@ -111,13 +117,13 @@ public class FullBroadcaster {
           } else if ("getSessionMatches".equals(parser.getCommand())) {
             getSessionMatches(parser);
           } else if ("isSubscriptionAlive".equals(parser.getCommand())) {
-            isSubscriptionAlive(parser);
+            isSubscriptionAlive(parser, subscriptionChannel);
           } else if ("unsubscribe".equals(parser.getCommand())) {
-            unsubscribe(parser);
+            unsubscribe(parser, subscriptionChannel, subscriber);
           } else if ("subscribeToMatch".equals(parser.getCommand())) {
-            subscribeToMatch(subscriber, parser);
+            subscribeToMatch(subscriber, parser, websocketIdentifier);
           } else if ("quit".equals(parser.getCommand())) {
-            quit(parser, subscriber);
+            quit(parser, subscriber, subscriptionChannel);
           } else {
             // Unknown command, just echoing user input
             Logger.info("echo user input " + userMessage);
@@ -130,11 +136,11 @@ public class FullBroadcaster {
       
       // Case: The socket has been closed
       for(WebSocketClose closed: SocketClosed.match(clientEvent)) {
-        quitAndUnsubscribe(subscriber);
+        quitAndUnsubscribe(subscriber, subscriptionChannel);
       }
     }
 
-    private static void unsubscribe(QueryStringParser parser) {
+    private static void unsubscribe(QueryStringParser parser, Channel subscriptionChannel, Subscriber subscriber) {
       Long matchID = null;
       if (subscriptionChannel != null) {
         matchID = subscriptionChannel.channelID.getMatchID();
@@ -144,7 +150,7 @@ public class FullBroadcaster {
       outbound.sendJson(ResponseBuilder.createDataResponse(parser, "System", "Unsubscribed from match " + (matchID != null ? matchID : "")));
     }
 
-    private static void isSubscriptionAlive(QueryStringParser parser) {
+    private static void isSubscriptionAlive(QueryStringParser parser, Channel subscriptionChannel) {
       if (subscriptionChannel != null) {
         MatchID matchID = new MatchID(subscriptionChannel.channelID.getMatchID(), subscriptionChannel.channelID.getSessionID());
         Match match = Match.findById(matchID);
@@ -153,9 +159,9 @@ public class FullBroadcaster {
         outbound.sendJson(ResponseBuilder.createDataResponse(parser, "System", "No match subscribed"));
       }
     }
-    private static void quit(QueryStringParser parser, Subscriber subscriber) {
+    private static void quit(QueryStringParser parser, Subscriber subscriber, Channel subscriptionChannel) {
       outbound.sendJson(ResponseBuilder.createDataResponse(parser, "", "Quitting..."));
-      quitAndUnsubscribe(subscriber);
+      quitAndUnsubscribe(subscriber, subscriptionChannel);
     }
 
     /**
@@ -164,7 +170,7 @@ public class FullBroadcaster {
      * @param subscriber
      * @param parser
      */
-    private static void subscribeToMatch(Subscriber subscriber, QueryStringParser parser) {
+    private static void subscribeToMatch(Subscriber subscriber, QueryStringParser parser, String websocketIdentifier) {
       if (parser.getParams().size() != 3) {
         outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_INVALID_REQUEST)));
         return;
@@ -191,7 +197,8 @@ public class FullBroadcaster {
       outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), "Match", match));
 
       // Second, subscribe to the match channel
-      subscriptionChannel = ChannelManager.getInstance().subscribe(subscriber, sessionID, matchID);
+      Channel subscriptionChannel = ChannelManager.getInstance().subscribe(subscriber, sessionID, matchID);
+      subscriptionChannels.put(websocketIdentifier, subscriptionChannel);
 
       List<PlayRecord> plays = PlayRecord.find("sessionid = ? and matchid = ? and playid <= ? order by playid ASC", sessionID, matchID, subscriptionChannel.lastPublishedPlayID).fetch();
 
@@ -313,7 +320,7 @@ public class FullBroadcaster {
       }
     }
     
-    private static void quitAndUnsubscribe(Subscriber subscriber) {
+    private static void quitAndUnsubscribe(Subscriber subscriber, Channel subscriptionChannel) {
       if (subscriptionChannel != null) {
         ChannelManager.getInstance().unsubscribe(subscriptionChannel, subscriber);
       }

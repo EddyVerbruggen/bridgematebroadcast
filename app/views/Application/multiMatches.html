@@ -3,27 +3,27 @@
 
 <h1>Publishing all events for matches in txt lines</h1>
 
-<div id="newMessage">
+<div>
  <!-- <input type="text" id="message" placeholder="type a command" value="subscribeToMatch(54253876,56066789,1102)"/> -->
   <input type="submit" value="Start following 4 matches" id="send"/>
   <input type="submit" value="Unsubscribe" id="unsubscribe"/>
 </div>
 
 <pre>
-  *{<div id="thread1101" style="position:absolute;width:800px;background-color:yellow;"></div>}*
-  <div id="thread1101" style="background-color:yellow;"></div>
-  *{<div id="thread1102" style="position:absolute;width:800px;background-color:orange;"></div>}*
-  <div id="thread1102" style="background-color:orange;"></div>
-  *{<div id="thread1103" style="background-color:blue;"></div>}*
-  *{<div id="thread1104" style="background-color:red;"></div>}*
+  <div class="background" style="position: relative; width: 1200px; height: 800px;">
+    <div id="thread1101" style="position: absolute; top: 10px; left: 1px; width: 599px; height:600px;background-color:yellow;overflow:scroll;"></div>
+    <div id="thread1102" style="position: absolute; top: 10px; left: 601px; width: 599px; height:600px;background-color:orange;overflow:scroll;"></div>
+    <div id="thread1103" style="position: absolute; top: 610px; left: 1px; width: 599px; height:600px;background-color:blue;overflow:scroll;"></div>
+    <div id="thread1104" style="position: absolute; top: 610px; left: 601px; width: 599px; height:600px;background-color:green;overflow:scroll;"></div>
+  </div>
 </pre>
 
 <script type="text/javascript">
   // Create sockets
-  var socket1101 = new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=test&password=test');
-  var socket1102 = new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=test&password=test');
-  var socket1103 = new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=test&password=test');
-  var socket1104 = new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=test&password=test');
+  var socket1101 = new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=match1101&password=match1101');
+  var socket1102 = new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=match1102&password=match1102');
+  var socket1103 = new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=match1103&password=match1103');
+  var socket1104 = new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=match1104&password=match1104');
 
 </script>
 
@@ -80,7 +80,8 @@
             );
           } else {
             $('#' + threadName)
-              .append("Received " + JSON.stringify(response)).append("<br/><br/>");
+              //.append("Received " + JSON.stringify(response)).append("<br/><br/>");
+              .append("Received " + JSON.stringify(response.response)).append("<br/><br/>");
           }
         }
 
