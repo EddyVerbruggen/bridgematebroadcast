@@ -51,12 +51,12 @@ public class ChannelManager {
         channel.lastPublishedPlayID = play.playid;
       }
 
-      Result result = Result.find("sessionid = ? and matchid = ? order by resultid DESC", sessionID, matchID).first();
+      Result result = Result.find("sessionid = ? and matchid = ? order by externalid DESC", sessionID, matchID).first();
       if (result != null) {
-        channel.lastPublishedResultID = result.resultid;
+        channel.lastPublishedResultExternalID = result.externalid;
       }
 
-      Logger.info("created channel for [sessionid = " + sessionID + ", matchid = " + matchID +", lastPublishedPlayID = " + channel.lastPublishedPlayID + ", lastPublishedResultID = " + channel.lastPublishedResultID + "]");
+      Logger.info("created channel for [sessionid = " + sessionID + ", matchid = " + matchID +", lastPublishedPlayID = " + channel.lastPublishedPlayID + ", lastPublishedResultExternalID = " + channel.lastPublishedResultExternalID + "]");
     }
     
     channel.subscribe(subscriber);

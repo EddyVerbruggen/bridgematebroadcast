@@ -77,11 +77,11 @@ public class PublishJob extends Job {
     }
 
     // 2. Check on and send new Result records
-    List<Result> results = Result.find("sessionid = ? and matchid = ? and resultid > ? order by resultid ASC", sessionID, matchID, channel.lastPublishedResultID).fetch();
+    List<Result> results = Result.find("sessionid = ? and matchid = ? and externalid > ? order by externalid ASC", sessionID, matchID, channel.lastPublishedResultExternalID).fetch();
     if (results != null && results.size() > 0) {
       channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Result", results));
       Result lastResultRecord = results.get(results.size() - 1);
-      channel.lastPublishedResultID = lastResultRecord.resultid;
+      channel.lastPublishedResultExternalID = lastResultRecord.externalid;
     } else {
       Logger.info("no result records to publish");
     }

@@ -219,7 +219,7 @@ public class FullBroadcaster {
       outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), "Play", plays));
 
       // Fifth, send result records... (Send all result records that will never be published anymore)
-      List<Result> results = Result.find("sessionid = ? and matchid = ? and resultid <= ? order by resultid ASC", sessionID, matchID, subscriptionChannel.lastPublishedResultID).fetch();
+      List<Result> results = Result.find("sessionid = ? and matchid = ? and externalid <= ? order by externalid ASC", sessionID, matchID, subscriptionChannel.lastPublishedResultExternalID).fetch();
       outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), "Result", results));
 
       // Send a history finished response

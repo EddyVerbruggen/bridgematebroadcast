@@ -15,7 +15,7 @@ public class Channel {
   public ChannelType channelType;
 
   public Long lastPublishedPlayID = 0L;
-  public Long lastPublishedResultID = 0L;
+  public Long lastPublishedResultExternalID = 0L;
   public List<Long> publishedBoardNumbers = new ArrayList<Long>();
 
   private List<Subscriber> subscribers = new ArrayList<Subscriber>();
