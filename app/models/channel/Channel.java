@@ -14,7 +14,12 @@ public class Channel {
   public ChannelID channelID;
   public ChannelType channelType;
 
-  public Long lastPublishedPlayID = 0L;
+  // Play publish status data within Match
+  public Long lastPublishedPlayBoardnumber = 0L;
+  public Long lastPublishedPlayIscard = 0L;
+  public Long lastPublishedPlayExternalID = 0L;
+
+  // Result publish status data within Match
   public Long lastPublishedResultExternalID = 0L;
   public List<Long> publishedBoardNumbers = new ArrayList<Long>();
 

@@ -4,6 +4,7 @@ import models.PlayRecord;
 import models.Result;
 import models.Subscriber;
 import play.Logger;
+import play.db.jpa.JPA;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -46,9 +47,26 @@ public class ChannelManager {
       channel.channelType = ChannelType.MATCH;
       channelMap.put(channel.channelID, channel);
 
-      PlayRecord play = PlayRecord.find("sessionid = ? and matchid = ? order by playid DESC", sessionID, matchID).first();
-      if (play != null) {
-        channel.lastPublishedPlayID = play.playid;
+      // Determine the max boardnumber that has been played on for this match
+      Long maxBoardNumber = (Long) JPA.em().createQuery("" +
+              " SELECT max(p.boardnumber) " +
+              " FROM PlayRecord p" + //use entity name here in JPA query
+              " WHERE sessionid = :sessionID and matchid = :matchID")
+              .setParameter("sessionID", sessionID)
+              .setParameter("matchID", matchID)
+              .getSingleResult();
+
+      Logger.info("Maximum board number played on is " + maxBoardNumber);
+
+      // If a play is available, set the play record publish status
+      if (maxBoardNumber != null) {
+        channel.lastPublishedPlayBoardnumber = maxBoardNumber;
+
+        PlayRecord play = PlayRecord.find("sessionid = ? and matchid = ? and boardnumber = ? order by iscard DESC, externalid DESC", sessionID, matchID, maxBoardNumber).first();
+        if (play != null) {
+          channel.lastPublishedPlayIscard = play.iscard;
+          channel.lastPublishedPlayExternalID = play.externalid;
+        }
       }
 
       Result result = Result.find("sessionid = ? and matchid = ? order by externalid DESC", sessionID, matchID).first();
@@ -56,7 +74,12 @@ public class ChannelManager {
         channel.lastPublishedResultExternalID = result.externalid;
       }
 
-      Logger.info("created channel for [sessionid = " + sessionID + ", matchid = " + matchID +", lastPublishedPlayID = " + channel.lastPublishedPlayID + ", lastPublishedResultExternalID = " + channel.lastPublishedResultExternalID + "]");
+      Logger.info("created channel for [sessionid = " + sessionID +
+              ", matchid = " + matchID +
+              ", lastPublishedPlayBoardnumber = " + channel.lastPublishedPlayBoardnumber +
+              ", lastPublishedPlayIscard = " + channel.lastPublishedPlayIscard +
+              ", lastPublishedPlayExternalID = " + channel.lastPublishedPlayExternalID +
+              ", lastPublishedResultExternalID = " + channel.lastPublishedResultExternalID + "]");
     }
     
     channel.subscribe(subscriber);

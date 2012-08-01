@@ -10,6 +10,7 @@ import play.jobs.Every;
 import play.jobs.Job;
 import play.jobs.OnApplicationStart;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -62,8 +63,38 @@ public class PublishJob extends Job {
     boolean isMatchFinished = false;
 
     // 1. Check if new handrecords need to be sent (loop through all play records and find out if Handrecord has been sent already)
-    List<PlayRecord> plays = PlayRecord.find("sessionid = ? and matchid = ? and playid > ? order by playid ASC", sessionID, matchID, channel.lastPublishedPlayID).fetch();
-    if (plays != null) {
+    //List<PlayRecord> plays = PlayRecord.find("sessionid = ? and matchid = ? and playid > ? order by playid ASC", sessionID, matchID, channel.lastPublishedPlayExternalID).fetch();
+    List<PlayRecord> playsCurrentBoard = PlayRecord.find("sessionid = ? and matchid = ? and boardnumber = ? and ((iscard = ? and externalid > ?) or (iscard > ?)) order by iscard ASC, externalid ASC",
+            sessionID,
+            matchID,
+            channel.lastPublishedPlayBoardnumber,
+            channel.lastPublishedPlayIscard,
+            channel.lastPublishedPlayExternalID,
+            channel.lastPublishedPlayIscard
+      ).fetch();
+
+    if (playsCurrentBoard.size() > 0) {
+      channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Play", playsCurrentBoard));
+      PlayRecord lastPlayRecord = playsCurrentBoard.get(playsCurrentBoard.size() - 1);
+      channel.lastPublishedPlayBoardnumber = lastPlayRecord.boardnumber;
+      channel.lastPublishedPlayIscard = lastPlayRecord.iscard;
+      channel.lastPublishedPlayExternalID = lastPlayRecord.externalid;
+    } else {
+      Logger.info("no play records to publish");
+    }
+
+
+    List<PlayRecord> playsNextBoards = PlayRecord.find("sessionid = ? and matchid = ? and boardnumber > ? order by boardnumber ASC, iscard ASC, externalid ASC",
+            sessionID,
+            matchID,
+            channel.lastPublishedPlayBoardnumber
+    ).fetch();
+
+    List<PlayRecord> plays = new ArrayList<PlayRecord>();
+    //plays.addAll(playsCurrentBoard);
+    plays.addAll(playsNextBoards);
+
+    if (plays.size() > 0) {
       for (PlayRecord play : plays) {
         if (!channel.publishedBoardNumbers.contains(play.boardnumber)) {
           HandRecordID id = new HandRecordID();
@@ -87,11 +118,13 @@ public class PublishJob extends Job {
     }
 
     // 3. Check on and send new Play records
-    // List<Play> plays = Play.find("sessionid = ? and matchid = ? and playid > ? order by playid ASC", sessionID, matchID, channel.lastPublishedPlayID).fetch();
-    if (plays != null && plays.size() > 0) {
+    // List<Play> plays = Play.find("sessionid = ? and matchid = ? and playid > ? order by playid ASC", sessionID, matchID, channel.lastPublishedPlayExternalID).fetch();
+    if (plays.size() > 0) {
       channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Play", plays));
       PlayRecord lastPlayRecord = plays.get(plays.size() - 1);
-      channel.lastPublishedPlayID = lastPlayRecord.playid;
+      channel.lastPublishedPlayBoardnumber = lastPlayRecord.boardnumber;
+      channel.lastPublishedPlayIscard = lastPlayRecord.iscard;
+      channel.lastPublishedPlayExternalID = lastPlayRecord.externalid;
     } else {
       Logger.info("no play records to publish");
     }

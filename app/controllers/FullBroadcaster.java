@@ -200,7 +200,25 @@ public class FullBroadcaster {
       Channel subscriptionChannel = ChannelManager.getInstance().subscribe(subscriber, sessionID, matchID);
       subscriptionChannels.put(websocketIdentifier, subscriptionChannel);
 
-      List<PlayRecord> plays = PlayRecord.find("sessionid = ? and matchid = ? and playid <= ? order by playid ASC", sessionID, matchID, subscriptionChannel.lastPublishedPlayID).fetch();
+      // Find all plays for previous boards
+      List<PlayRecord> plays =
+            PlayRecord.find("sessionid = ? and matchid = ? and boardnumber < ? ORDER by boardnumber ASC, iscard ASC, externalid ASC",
+                    sessionID,
+                    matchID,
+                    subscriptionChannel.lastPublishedPlayBoardnumber).fetch();
+
+      // Find all plays for current board
+      List<PlayRecord> currentPlays = PlayRecord.find("sessionid = ? and matchid = ? and boardnumber = ? and ((iscard = ? and externalid <= ?) or (iscard < ?)) order by iscard ASC, externalid ASC",
+              sessionID,
+              matchID,
+              subscriptionChannel.lastPublishedPlayBoardnumber,
+              subscriptionChannel.lastPublishedPlayIscard,
+              subscriptionChannel.lastPublishedPlayExternalID,
+              subscriptionChannel.lastPublishedPlayIscard
+      ).fetch();
+
+      // Combine both lists
+      plays.addAll(currentPlays);
 
       // Third, send handrecords for boardnumbers that already have play records
       List<Long> publishedBoardNumbers = new ArrayList<Long>();
@@ -214,7 +232,7 @@ public class FullBroadcaster {
           subscriptionChannel.publishedBoardNumbers.add(play.boardnumber);
         }
       }
-      
+
       // Fourth, send play records... (Send all play records that will never be published anymore)
       outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), "Play", plays));
 

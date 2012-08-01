@@ -61,6 +61,8 @@
                 $('#' + threadName)
                   .append("PLAY ID " + JSON.stringify(item.playid))
                   .append(" Board:" + JSON.stringify(item.boardnumber))
+                  .append(" Iscard:" + JSON.stringify(item.iscard))
+                  .append(" ExternalID:" + JSON.stringify(item.externalid))
                   .append(" " + JSON.stringify(item.direction))
                   .append(" " + JSON.stringify(item.action))
                   .append(" MATCH " + JSON.stringify(item.match.id.matchid))
