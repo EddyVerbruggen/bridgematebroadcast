@@ -252,6 +252,7 @@ public class LivefeedTestDataJob extends Job {
     tournament.startdate = livefeedTournament.startdate;
     tournament.enddate = livefeedTournament.enddate;
     tournament.timezone = livefeedTournament.timezone;
+    tournament.status = 1L;
 
     return tournament;
   }

@@ -248,8 +248,7 @@ public class FullBroadcaster {
      * Get all events (tournaments)
      */
     private static void getTournaments(QueryStringParser parser) {
-      //TODO: Handle status (do not return status 2)
-      List<Tournament> tournaments = Tournament.findAll();
+      List<Tournament> tournaments = Tournament.find("status <> ?", 2L).fetch();
       if (!tournaments.isEmpty()) {
         outbound.sendJson(ResponseBuilder.createDataResponse(parser, "Tournaments", tournaments));
       } else {

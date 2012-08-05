@@ -19,5 +19,6 @@ public class LivefeedTournament extends GenericModel {
   public Date startdate;
   public Date enddate;
   public String timezone;
+  public Long status;
 
 }
