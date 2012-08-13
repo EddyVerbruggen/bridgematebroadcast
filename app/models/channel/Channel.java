@@ -3,8 +3,7 @@ package models.channel;
 import models.Subscriber;
 import play.libs.F;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Wrapper channel class around Play eventstream object
@@ -24,29 +23,42 @@ public class Channel {
   public List<Long> publishedBoardNumbers = new ArrayList<Long>();
 
   private List<Subscriber> subscribers = new ArrayList<Subscriber>();
-  
-  private F.EventStream liveStream = new F.EventStream();
+
+  private Map<Subscriber, F.EventStream> streams = new HashMap<Subscriber, F.EventStream>();
 
   // Use ChannelManager.subscribe to subscribe to a channel
   void subscribe(Subscriber subscriber) {
     subscribers.add(subscriber);
+    streams.put(subscriber, new F.EventStream());
   }
   
   // Use ChannelManager.subscribe to unsubscribe from a channel
   void unsubscribe(Subscriber subscriber) {
     subscribers.remove(subscriber);
+    streams.remove(subscriber);
   }
 
   void unsubscribeAll() {
     subscribers.clear();
+    streams.clear();
   }
 
-  public void publish(Object publishObject) {
-    liveStream.publish(publishObject);
+  public synchronized void publish(Object publishObject) {
+    Set subscribers = streams.keySet() ;
+
+    Iterator itr = subscribers.iterator();
+    while (itr.hasNext()) {
+      Subscriber subscriber = (Subscriber) itr.next();
+      F.EventStream stream = streams.get(subscriber);
+      if (stream != null) {
+        stream.publish(publishObject);
+      }
+    }
   }
-  
-  public F.Promise nextEvent() {
-    return liveStream.nextEvent();
+
+  public synchronized F.Promise nextEvent(Subscriber subscriber) {
+    F.EventStream stream = streams.get(subscriber);
+    return stream.nextEvent();
   }
 
   @Override

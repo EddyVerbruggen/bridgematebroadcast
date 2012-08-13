@@ -64,7 +64,7 @@ public class FullBroadcaster {
           F.Either<WebSocketEvent, F.Promise> either = (Either<WebSocketEvent, Promise>)
             await(Promise.waitEither(
               inbound.nextEvent(),
-              subscriptionChannel.nextEvent()));
+              subscriptionChannel.nextEvent(subscriber)));
 
           if (either._1.isDefined()) {
             // inbound socket channel event received

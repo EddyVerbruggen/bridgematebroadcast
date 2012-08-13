@@ -31,7 +31,7 @@ public class Broadcaster {
       while (inbound.isOpen()) {
         hasConnection = true;
         try {
-          Object obj = await(channel.nextEvent()); // using object, so we can publish anything.. although it's most likely a List<Model>
+          Object obj = await(channel.nextEvent(subscriber)); // using object, so we can publish anything.. although it's most likely a List<Model>
           if (obj != null) {
             outbound.sendJson(obj);
             Logger.info("enjoying sending a JSON object");
