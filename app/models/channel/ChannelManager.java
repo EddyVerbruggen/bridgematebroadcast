@@ -1,5 +1,6 @@
 package models.channel;
 
+import controllers.model.WebsocketSubscriber;
 import models.PlayRecord;
 import models.Result;
 import models.Subscriber;
@@ -31,13 +32,13 @@ public class ChannelManager {
 
   /**
    * Subscribe to a channel with sessionid and (possibly) matchid
-   * @param subscriber The subscriber to the channel
+   * @param websocketSubscriber The subscriber to the channel
    * @param sessionID The session to subscribe to
    * @param matchID The match to subscribe to
    * @return
    *
    */
-  public Channel subscribe(Subscriber subscriber, Long sessionID, Long matchID){
+  public Channel subscribe(WebsocketSubscriber websocketSubscriber, Long sessionID, Long matchID){
     Channel channel = findChannel(sessionID, matchID);
     
     if (channel == null) {
@@ -82,7 +83,7 @@ public class ChannelManager {
               ", lastPublishedResultExternalID = " + channel.lastPublishedResultExternalID + "]");
     }
     
-    channel.subscribe(subscriber);
+    channel.subscribe(websocketSubscriber);
 
     return channel;
   }
@@ -96,8 +97,8 @@ public class ChannelManager {
     channelMap.remove(subscriptionChannel.channelID);
   }
   
-  public void unsubscribe(Channel subscriptionChannel, Subscriber subscriber) {
-    subscriptionChannel.unsubscribe(subscriber);
+  public void unsubscribe(Channel subscriptionChannel, WebsocketSubscriber websocketSubscriber) {
+    subscriptionChannel.unsubscribe(websocketSubscriber);
     if (subscriptionChannel.hasNoSubscriptions()) {
       channelMap.remove(subscriptionChannel.channelID);
     }

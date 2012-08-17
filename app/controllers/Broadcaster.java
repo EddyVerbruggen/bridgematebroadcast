@@ -1,5 +1,6 @@
 package controllers;
 
+import controllers.model.WebsocketSubscriber;
 import models.Subscriber;
 import models.channel.Channel;
 import models.channel.ChannelManager;
@@ -25,13 +26,16 @@ public class Broadcaster {
 
       Subscriber subscriber = new Subscriber();
       subscriber.name = "TEST";
-      Channel channel = ChannelManager.getInstance().subscribe(subscriber, matchID, matchID);
+      String websocketIdentifier = WebSocket.outbound.toString();
+
+      WebsocketSubscriber websocketSubscriber = new WebsocketSubscriber(subscriber, websocketIdentifier);
+      Channel channel = ChannelManager.getInstance().subscribe(websocketSubscriber, matchID, matchID);
 
       hasConnection = false;
       while (inbound.isOpen()) {
         hasConnection = true;
         try {
-          Object obj = await(channel.nextEvent(subscriber)); // using object, so we can publish anything.. although it's most likely a List<Model>
+          Object obj = await(channel.nextEvent(websocketSubscriber)); // using object, so we can publish anything.. although it's most likely a List<Model>
           if (obj != null) {
             outbound.sendJson(obj);
             Logger.info("enjoying sending a JSON object");

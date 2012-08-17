@@ -2,6 +2,7 @@ package controllers;
 
 import controllers.model.Error;
 import controllers.model.Response;
+import controllers.model.WebsocketSubscriber;
 import controllers.util.QueryStringParser;
 import controllers.util.QueryStringParserException;
 import models.*;
@@ -27,7 +28,7 @@ public class FullBroadcaster {
 
     private static HashMap<String, Channel> subscriptionChannels = new HashMap<String, Channel>();
 
-    private static HashMap<String, Subscriber> subscribers = new HashMap<String, Subscriber>();
+    private static HashMap<String, WebsocketSubscriber> subscribers = new HashMap<String, WebsocketSubscriber>();
 
     public static void stream(String username, String password) {
       Logger.info("entered new fullbroadcaster for outbound: " + WebSocket.outbound.toString());
@@ -36,9 +37,10 @@ public class FullBroadcaster {
 
       loginSubscriber(username, password, websocketIdentifier);
 
-      Subscriber subscriber = subscribers.get(websocketIdentifier);
+      WebsocketSubscriber websocketSubscriber = subscribers.get(websocketIdentifier);
+
       if (inbound.isOpen()) {
-        if (subscriber == null) {
+        if (websocketSubscriber == null) {
           Logger.info("Invalid username/password combination, disconnecting...");
           outbound.sendJson(ResponseBuilder.createErrorResponse("", new Error(Error.ERROR_INCORRECT_CREDENTIALS)));
           return;
@@ -53,7 +55,7 @@ public class FullBroadcaster {
         WebSocketEvent clientEvent = null;
 
         Channel subscriptionChannel = subscriptionChannels.get(websocketIdentifier);
-        
+
         if (subscriptionChannel == null) {
           Logger.info("awaiting input only from client...");
           // Not yet subscribed, so no subscriptionChannel. Waiting for client event.
@@ -64,7 +66,7 @@ public class FullBroadcaster {
           F.Either<WebSocketEvent, F.Promise> either = (Either<WebSocketEvent, Promise>)
             await(Promise.waitEither(
               inbound.nextEvent(),
-              subscriptionChannel.nextEvent(subscriber)));
+              subscriptionChannel.nextEvent(websocketSubscriber)));
 
           if (either._1.isDefined()) {
             // inbound socket channel event received
@@ -79,7 +81,7 @@ public class FullBroadcaster {
         if (clientEvent != null) {
           Logger.info("received clientEvent " + clientEvent);
           // handle clientEvent
-          handleClientEvent(subscriber, clientEvent, subscriptionChannel, websocketIdentifier);
+          handleClientEvent(websocketSubscriber, clientEvent, subscriptionChannel, websocketIdentifier);
         }
       }
     }
@@ -90,7 +92,8 @@ public class FullBroadcaster {
       List<Subscriber> registeredSubscribers = Subscriber.find("loginname = ? and password = ? and active = '1'", username, password).fetch();
 
       if (registeredSubscribers.size() == 1) {
-        subscribers.put(websocketIdentifier, registeredSubscribers.get(0));
+        WebsocketSubscriber websocketSubscriber = new WebsocketSubscriber(registeredSubscribers.get(0), websocketIdentifier);
+        subscribers.put(websocketIdentifier, websocketSubscriber);
       }
     }
 
@@ -99,7 +102,7 @@ public class FullBroadcaster {
       outbound.sendJson(channelEvent);
     }
 
-    private static void handleClientEvent(Subscriber subscriber, WebSocketEvent clientEvent, Channel subscriptionChannel, String websocketIdentifier) {
+    private static void handleClientEvent(WebsocketSubscriber websocketSubscriber, WebSocketEvent clientEvent, Channel subscriptionChannel, String websocketIdentifier) {
       Logger.info("handleClientEvent " + clientEvent);
 
       for(String userMessage: TextFrame.match(clientEvent)) {
@@ -119,11 +122,11 @@ public class FullBroadcaster {
           } else if ("isSubscriptionAlive".equals(parser.getCommand())) {
             isSubscriptionAlive(parser, subscriptionChannel);
           } else if ("unsubscribe".equals(parser.getCommand())) {
-            unsubscribe(parser, subscriptionChannel, subscriber);
+            unsubscribe(parser, subscriptionChannel, websocketSubscriber);
           } else if ("subscribeToMatch".equals(parser.getCommand())) {
-            subscribeToMatch(subscriber, parser, websocketIdentifier);
+            subscribeToMatch(websocketSubscriber, parser, websocketIdentifier);
           } else if ("quit".equals(parser.getCommand())) {
-            quit(parser, subscriber, subscriptionChannel);
+            quit(parser, websocketSubscriber, subscriptionChannel);
           } else {
             // Unknown command, just echoing user input
             Logger.info("echo user input " + userMessage);
@@ -136,15 +139,15 @@ public class FullBroadcaster {
       
       // Case: The socket has been closed
       for(WebSocketClose closed: SocketClosed.match(clientEvent)) {
-        quitAndUnsubscribe(subscriber, subscriptionChannel);
+        quitAndUnsubscribe(websocketSubscriber, subscriptionChannel);
       }
     }
 
-    private static void unsubscribe(QueryStringParser parser, Channel subscriptionChannel, Subscriber subscriber) {
+    private static void unsubscribe(QueryStringParser parser, Channel subscriptionChannel, WebsocketSubscriber websocketSubscriber) {
       Long matchID = null;
       if (subscriptionChannel != null) {
         matchID = subscriptionChannel.channelID.getMatchID();
-        ChannelManager.getInstance().unsubscribe(subscriptionChannel, subscriber);
+        ChannelManager.getInstance().unsubscribe(subscriptionChannel, websocketSubscriber);
         subscriptionChannel = null;
       }
       outbound.sendJson(ResponseBuilder.createDataResponse(parser, "System", "Unsubscribed from match " + (matchID != null ? matchID : "")));
@@ -159,18 +162,18 @@ public class FullBroadcaster {
         outbound.sendJson(ResponseBuilder.createDataResponse(parser, "System", "No match subscribed"));
       }
     }
-    private static void quit(QueryStringParser parser, Subscriber subscriber, Channel subscriptionChannel) {
+    private static void quit(QueryStringParser parser, WebsocketSubscriber websocketSubscriber, Channel subscriptionChannel) {
       outbound.sendJson(ResponseBuilder.createDataResponse(parser, "", "Quitting..."));
-      quitAndUnsubscribe(subscriber, subscriptionChannel);
+      quitAndUnsubscribe(websocketSubscriber, subscriptionChannel);
     }
 
     /**
      * Subscribe subscriber to a match.
      * TODO FUTURE: We can check here if the subscriber is allowed to subscribe and register the subscription for charging purposes.
-     * @param subscriber
+     * @param websocketSubscriber
      * @param parser
      */
-    private static void subscribeToMatch(Subscriber subscriber, QueryStringParser parser, String websocketIdentifier) {
+    private static void subscribeToMatch(WebsocketSubscriber websocketSubscriber, QueryStringParser parser, String websocketIdentifier) {
       if (parser.getParams().size() != 3) {
         outbound.sendJson(ResponseBuilder.createErrorResponse(parser, new Error(Error.ERROR_INVALID_REQUEST)));
         return;
@@ -197,7 +200,7 @@ public class FullBroadcaster {
       outbound.sendJson(ResponseBuilder.createDataResponse(parser.getQueryString(), "Match", match));
 
       // Second, subscribe to the match channel
-      Channel subscriptionChannel = ChannelManager.getInstance().subscribe(subscriber, sessionID, matchID);
+      Channel subscriptionChannel = ChannelManager.getInstance().subscribe(websocketSubscriber, sessionID, matchID);
       subscriptionChannels.put(websocketIdentifier, subscriptionChannel);
 
       // Find all plays for previous boards
@@ -337,9 +340,9 @@ public class FullBroadcaster {
       }
     }
     
-    private static void quitAndUnsubscribe(Subscriber subscriber, Channel subscriptionChannel) {
+    private static void quitAndUnsubscribe(WebsocketSubscriber websocketSubscriber, Channel subscriptionChannel) {
       if (subscriptionChannel != null) {
-        ChannelManager.getInstance().unsubscribe(subscriptionChannel, subscriber);
+        ChannelManager.getInstance().unsubscribe(subscriptionChannel, websocketSubscriber);
       }
       disconnect();
     }

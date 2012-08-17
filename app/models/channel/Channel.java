@@ -1,5 +1,6 @@
 package models.channel;
 
+import controllers.model.WebsocketSubscriber;
 import models.Subscriber;
 import play.libs.F;
 
@@ -22,18 +23,18 @@ public class Channel {
   public Long lastPublishedResultExternalID = 0L;
   public List<Long> publishedBoardNumbers = new ArrayList<Long>();
 
-  private List<Subscriber> subscribers = new ArrayList<Subscriber>();
+  private List<WebsocketSubscriber> subscribers = new ArrayList<WebsocketSubscriber>();
 
-  private Map<Subscriber, F.EventStream> streams = new HashMap<Subscriber, F.EventStream>();
+  private Map<WebsocketSubscriber, F.EventStream> streams = new HashMap<WebsocketSubscriber, F.EventStream>();
 
   // Use ChannelManager.subscribe to subscribe to a channel
-  void subscribe(Subscriber subscriber) {
+  void subscribe(WebsocketSubscriber subscriber) {
     subscribers.add(subscriber);
     streams.put(subscriber, new F.EventStream());
   }
   
   // Use ChannelManager.subscribe to unsubscribe from a channel
-  void unsubscribe(Subscriber subscriber) {
+  void unsubscribe(WebsocketSubscriber subscriber) {
     subscribers.remove(subscriber);
     streams.remove(subscriber);
   }
@@ -48,7 +49,7 @@ public class Channel {
 
     Iterator itr = subscribers.iterator();
     while (itr.hasNext()) {
-      Subscriber subscriber = (Subscriber) itr.next();
+      WebsocketSubscriber subscriber = (WebsocketSubscriber) itr.next();
       F.EventStream stream = streams.get(subscriber);
       if (stream != null) {
         stream.publish(publishObject);
@@ -56,7 +57,7 @@ public class Channel {
     }
   }
 
-  public synchronized F.Promise nextEvent(Subscriber subscriber) {
+  public synchronized F.Promise nextEvent(WebsocketSubscriber subscriber) {
     F.EventStream stream = streams.get(subscriber);
     return stream.nextEvent();
   }

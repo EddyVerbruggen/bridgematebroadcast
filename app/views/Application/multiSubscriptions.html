@@ -1,0 +1,121 @@
+#{extends 'main.html' /}
+#{set title:'Test client BBS - Multiple matches - multiple websockets' /}
+
+<h1>Publishing all events for matches in txt lines</h1>
+
+<div>
+ <!-- <input type="text" id="message" placeholder="type a command" value="subscribeToMatch(54253876,56066789,1102)"/> -->
+  <input type="submit" value="Start following 4 matches" id="send"/>
+  <input type="submit" value="Unsubscribe" id="unsubscribe"/>
+</div>
+
+<pre>
+  <div class="background" style="position: relative; width: 1200px; height: 800px;">
+    <div id="thread1101" style="position: absolute; top: 10px; left: 1px; width: 599px; height:600px;background-color:yellow;overflow:scroll;"></div>
+    <div id="thread1102" style="position: absolute; top: 10px; left: 601px; width: 599px; height:600px;background-color:orange;overflow:scroll;"></div>
+    <div id="thread1103" style="position: absolute; top: 610px; left: 1px; width: 599px; height:600px;background-color:blue;overflow:scroll;"></div>
+    <div id="thread1104" style="position: absolute; top: 610px; left: 601px; width: 599px; height:600px;background-color:green;overflow:scroll;"></div>
+  </div>
+</pre>
+
+<script type="text/javascript">
+  // Create sockets
+  var socket1101 = new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=match1101&password=match1101');
+  var socket1102 = new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=match1101&password=match1101');
+  var socket1103 = new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=match1101&password=match1101');
+  var socket1104 = new WebSocket('@@{FullBroadcaster.WebSocket.stream}?username=match1101&password=match1101');
+
+</script>
+
+
+<script type="text/javascript">
+
+    // Message received on the socket
+    socket1101.onmessage = function (event) {
+      socketMessage("thread1101", event);
+    }
+    socket1102.onmessage = function (event) {
+      socketMessage("thread1102", event);
+    }
+    socket1103.onmessage = function (event) {
+      socketMessage("thread1103", event);
+    }
+    socket1104.onmessage = function (event) {
+      socketMessage("thread1104", event);
+    }
+
+    function socketMessage(threadName, event) {
+      try {
+        var response = JSON.parse(event.data);
+        if (response.success) {
+          if (JSON.stringify(response.responseType) == "\"Match\"") {
+            $('#' + threadName)
+              .append("MATCH ID " + JSON.stringify(response.response.id.matchid))
+              .append(" Status " + JSON.stringify(response.response.status))
+              .append("<br/>");
+          } else if (JSON.stringify(response.responseType) == "\"Handrecord\"") {
+            $('#' + threadName)
+              .append("HANDRECORD BOARD " + JSON.stringify(response.response.handRecordID.boardNumber)).append("<br/>");
+          } else if (JSON.stringify(response.responseType) == "\"Play\"") {
+            $(response.response).each(function(i, item) {
+                $('#' + threadName)
+                  .append("PLAY ID " + JSON.stringify(item.playid))
+                  .append(" Board:" + JSON.stringify(item.boardnumber))
+                  .append(" Iscard:" + JSON.stringify(item.iscard))
+                  .append(" ExternalID:" + JSON.stringify(item.externalid))
+                  .append(" " + JSON.stringify(item.direction))
+                  .append(" " + JSON.stringify(item.action))
+                  .append(" MATCH " + JSON.stringify(item.match.id.matchid))
+                  .append("<br/>");
+              }
+            );
+          } else if (JSON.stringify(response.responseType) == "\"Result\"") {
+            $(response.response).each(function(i, item) {
+                $('#' + threadName)
+                  .append("RESULT")
+                  .append(" Board:" + JSON.stringify(item.boardnumber))
+                  .append(" " + JSON.stringify(item.contract))
+                  .append(" " + JSON.stringify(item.declarer))
+                  .append(" " + JSON.stringify(item.result))
+                  .append("<br/>");
+              }
+            );
+          } else {
+            $('#' + threadName)
+              //.append("Received " + JSON.stringify(response)).append("<br/><br/>");
+              .append("Received " + JSON.stringify(response.response)).append("<br/><br/>");
+          }
+        }
+
+      } catch (e) {
+        $('#' + threadName)
+          .append("No valid JSON data: " + e).append("<br/><br/>");
+      }
+
+      //$('#thread').append(formatJson(event.data.responseType)).append("<br/><br/>");
+
+      document.getElementById(threadName).scrollTop = document.getElementById(threadName).scrollHeight;
+    }
+
+    $('#send').click(function(e) {
+      socket1101.send("subscribeToMatch(54253876,56066789,1101)");
+      socket1102.send("subscribeToMatch(54253876,56066789,1101)");
+      socket1103.send("subscribeToMatch(54253876,56066789,1101)");
+      socket1104.send("subscribeToMatch(54253876,56066789,1101)");
+    });
+
+    $('#unsubscribe').click(function(e) {
+      socket1101.send("unsubscribe");
+      socket1102.send("unsubscribe");
+      socket1103.send("unsubscribe");
+      socket1104.send("unsubscribe");
+    });
+
+    $('#message').keypress(function(e) {
+        if(e.charCode == 13 || e.keyCode == 13) {
+            $('#send').click()
+            e.preventDefault()
+        }
+    })
+
+</script>
