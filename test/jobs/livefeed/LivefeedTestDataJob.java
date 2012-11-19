@@ -35,7 +35,7 @@ public class LivefeedTestDataJob extends Job {
   public void doJob() throws Exception {
     nrOfSecondsSimulating++;
     // Only run the livefeed testdata job in testmode
-    if (play.Play.runningInTestMode()) {
+    if (play.Play.runingInTestMode()) {
       if (Status.START.equals(status)) {
         doStart();
       }

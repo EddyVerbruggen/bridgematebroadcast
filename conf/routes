@@ -21,7 +21,15 @@ GET     /data/tournament/{tournamentid}/sessions         Data.sessions
 GET     /data/tournament/{tournamentid}/session/{sessionid}         Data.session
 
 #CRUD admin pages
-*       /admin                                  module:crud
+*       /admin2                                 module:crud
+
+# Own admin pages
+*       /admin/                                AdminController.admin
+POST    /admin/tournaments/save                AdminController.saveTournaments
+POST    /admin/sessions/save                   AdminController.saveSessions
+
+#Import secure routes
+*       /admin                                  module:secure
 
 # WebSockets
 WS      /socket                                 Broadcaster.WebSocket.stream

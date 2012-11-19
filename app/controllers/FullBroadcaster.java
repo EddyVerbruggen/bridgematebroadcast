@@ -84,6 +84,8 @@ public class FullBroadcaster {
           handleClientEvent(websocketSubscriber, clientEvent, subscriptionChannel, websocketIdentifier);
         }
       }
+
+      Logger.info("exit fullbroadcaster for outbound: " + WebSocket.outbound.toString());
     }
 
     private static void loginSubscriber(String username, String password, String websocketIdentifier) {

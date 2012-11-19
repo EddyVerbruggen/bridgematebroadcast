@@ -1,0 +1,66 @@
+#{extends 'main.html' /}
+#{set title:'BBS Administration Console' /}
+
+#{if flash.success}
+<p class="success">${flash.success}</p>
+#{/if}
+
+#{ifErrors}
+
+<ul class="error">
+  #{errors}
+  <li>${error}</li>
+  #{/errors}
+</ul>
+
+#{/ifErrors}
+
+#{form @saveTournaments()}
+<h2>Events</h2>
+<table>
+  *{<tr><th>Id</th><th>Naam</th><th>Lokatie</th><th>Startdatum</th><th>Einddatum</th><th>Tijdzone</th><th>Status</th></tr>}*
+  <tr><th>Id</th><th>Naam</th><th>Lokatie</th><th>Startdatum</th><th>Einddatum</th><th>Tijdzone</th></tr>
+#{list tournaments, as: 'tournament'}
+<tr>
+  <td>${tournament.tournamentid} <input type="hidden" name="tournaments.tournamentid" value="${tournament.tournamentid}"/></td>
+  <td><input name="tournaments.name" value="${tournament.name}" class="wideInput"/></td>
+  <td><input name="tournaments.location" value="${tournament.location}" class="wideInput"/></td>
+  <td>
+    <input name="tournaments.startdate" value="${tournament.startdate != null ? tournament.startdate.format('dd/MM/yyyy') : ''}" />
+    <span class="error">#{error 'tournament.startdate' /}</span>
+  </td>
+  <td><input name="tournaments.enddate" value="${tournament.enddate != null ? tournament.enddate.format('dd/MM/yyyy') : ''}" /></td>
+  <td><input name="tournaments.timezone" value="${tournament.timezone}"/></td>
+  *{<td>${tournament.status}</td>}*
+</tr>
+#{/list}
+</table>
+<br/><br/>
+<input type="submit" value="Save events"/>
+#{/form}
+<br/><br/>
+#{form @saveSessions()}
+<h2>Sessions</h2>
+<table>
+  *{<tr><th>Id</th><th>Name</th><th>Event</th><th>Datum</th><th>Status</th></tr>}*
+  <tr><th>Id</th><th>Name</th><th>Event</th><th>Datum</th></tr>
+#{list sessions, as: 'session'}
+  <tr>
+    <td>${session.sessionid} <input type="hidden" name="sessions.sessionid" value="${session.sessionid}"/></td>
+    <td><input name="sessions.name" value="${session.name}" class="wideInput"/></td>
+    <td>
+      <select name="sessions.tournamentid[]" value="${session?.tournament?.tournamentid}">
+        #{list tournamentDropdown, as : 'tournamentDropdownItem'}
+          <option value="${tournamentDropdownItem.tournamentid}" ${session?.tournament?.tournamentid == tournamentDropdownItem.tournamentid ? 'selected' : ''}>${tournamentDropdownItem.name}</option>
+        #{/list}
+      </select>
+    </td>
+    <td><input name="sessions.date" value="${session.date != null ? session.date.format('dd/MM/yyyy') : ''}"/></td>
+    *{<td>${session.status}</td>}*
+  </tr>
+#{/list}
+</table>
+<br/><br/>
+<input type="submit" value="Save sessions"/>
+
+#{/form}

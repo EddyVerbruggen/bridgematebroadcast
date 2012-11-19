@@ -1,3 +1,22 @@
 # You can specialize this file for each language.
 # For example, for French create a messages.fr file
 #
+
+name=Naam
+location=Lokatie
+startdate=Startdatum
+enddate=Einddatum
+t.enddate=Einddatum
+t.startdate=Startdatum
+
+
+s.date=Datum
+s.name=Naam
+s.tournament=Event
+validation.required=Veld %s is verplicht
+validation.object=Validatie is niet gelukt
+
+
+crud.title=BBS Administration Console
+crud.index.title=Kies welke records u wilt wijzigen
+crud.index.objectType=Soort record
