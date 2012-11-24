@@ -24,7 +24,7 @@ public class Session extends GenericModel {
   public String name;
 
   @Required
-  @As(lang={"*"}, value={"dd/MM/yyyy"})
+  @As(lang={"*"}, value={"dd/MM/yyyy HH:mm"})
   public Date date;
 
   public Long status;

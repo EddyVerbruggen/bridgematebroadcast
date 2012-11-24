@@ -55,7 +55,7 @@
         #{/list}
       </select>
     </td>
-    <td><input name="sessions.date" value="${session.date != null ? session.date.format('dd/MM/yyyy') : ''}"/></td>
+    <td><input name="sessions.date" value="${session.date != null ? session.date.format('dd/MM/yyyy HH:mm') : ''}"/></td>
     *{<td>${session.status}</td>}*
   </tr>
 #{/list}
