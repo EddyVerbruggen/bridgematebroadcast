@@ -132,7 +132,11 @@ public class PublishJob extends Job {
     // 4. Check if match is finished yet
     MatchID matchIDObj = new MatchID(matchID, sessionID); 
     Match match = Match.findById(matchIDObj);
-    if (match.isFinished()) {
+    if (match == null) {
+      // Match could not be found anymore, which means it is deleted so we should kill the channel and its subscriptionss
+      isMatchFinished = true;
+      Logger.info("Match could not be found");
+    } else if (match.isFinished()) {
       // Publish match object, since match is finished
       channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Match", match));
       isMatchFinished = true;
