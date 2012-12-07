@@ -59,7 +59,11 @@ public class Channel {
 
   public synchronized F.Promise nextEvent(WebsocketSubscriber subscriber) {
     F.EventStream stream = streams.get(subscriber);
-    return stream.nextEvent();
+    if (stream != null) {
+      return stream.nextEvent();
+    } else {
+      return null;
+    }
   }
 
   @Override

@@ -74,7 +74,7 @@ public class FullBroadcaster {
           }
           if (either._2.isDefined()) {
             // subscriptionChannel event received, send to client
-            handleChannelEvent(either._2.get());
+            handleChannelEvent(subscriptionChannel, either._2.get(), websocketSubscriber);
           }
         }
 
@@ -99,9 +99,19 @@ public class FullBroadcaster {
       }
     }
 
-    private static void handleChannelEvent(Object channelEvent) {
+    private static void handleChannelEvent(Channel subscriptionChannel, Object channelEvent, WebsocketSubscriber subscriber) {
       Logger.info("handleChannelEvent " + channelEvent);
       outbound.sendJson(channelEvent);
+      if (channelEvent instanceof Response) {
+        Object responseObject = ((Response) channelEvent).getResponse();
+        if (responseObject instanceof Match) {
+          Match match = (Match) responseObject;
+          if (match.isFinished()) {
+            ChannelManager.getInstance().unsubscribe(subscriptionChannel, subscriber);
+            subscriptionChannel = null;
+          }
+        }
+      }
     }
 
     private static void handleClientEvent(WebsocketSubscriber websocketSubscriber, WebSocketEvent clientEvent, Channel subscriptionChannel, String websocketIdentifier) {
@@ -206,11 +216,16 @@ public class FullBroadcaster {
       subscriptionChannels.put(websocketIdentifier, subscriptionChannel);
 
       // Find all plays for previous boards
-      List<PlayRecord> plays =
-            PlayRecord.find("sessionid = ? and matchid = ? and boardnumber < ? ORDER by boardnumber ASC, iscard ASC, externalid ASC",
-                    sessionID,
-                    matchID,
-                    subscriptionChannel.lastPublishedPlayBoardnumber).fetch();
+      List<PlayRecord> plays = new ArrayList<PlayRecord>();
+      if (subscriptionChannel.publishedBoardNumbers != null && !subscriptionChannel.publishedBoardNumbers.isEmpty()) {
+        plays =
+            PlayRecord.find("sessionid = :sessionid and matchid = :matchid and boardnumber <> :lastPublishedBoardNumber and boardnumber in :publishedBoardNumbers ORDER by boardnumber ASC, iscard ASC, externalid ASC")
+                .bind("sessionid", sessionID)
+                .bind("matchid", matchID)
+                .bind("lastPublishedBoardNumber", subscriptionChannel.lastPublishedPlayBoardnumber)
+                .bind("publishedBoardNumbers", subscriptionChannel.publishedBoardNumbers)
+                .fetch();
+      }
 
       // Find all plays for current board
       List<PlayRecord> currentPlays = PlayRecord.find("sessionid = ? and matchid = ? and boardnumber = ? and ((iscard = ? and externalid <= ?) or (iscard < ?)) order by iscard ASC, externalid ASC",

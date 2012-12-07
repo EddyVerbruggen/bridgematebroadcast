@@ -49,8 +49,9 @@ public class PublishJob extends Job {
         Long matchID = channel.channelID.getMatchID();
         boolean isMatchFinished = handleMatchSubscription(channel, sessionID, matchID);
         if (isMatchFinished) {
+          // TODO: Apparently this does not work (some timing issues with the match record being published)
           // Kill all subscriptions on match here...
-          ChannelManager.getInstance().unsubscribeAll(channel);
+          // ChannelManager.getInstance().unsubscribeAll(channel);
         }
       } else {
         // Session subscription
@@ -84,15 +85,22 @@ public class PublishJob extends Job {
     }
 
 
-    List<PlayRecord> playsNextBoards = PlayRecord.find("sessionid = ? and matchid = ? and boardnumber > ? order by boardnumber ASC, iscard ASC, externalid ASC",
-            sessionID,
-            matchID,
-            channel.lastPublishedPlayBoardnumber
-    ).fetch();
-
+    // Check for play records of not yet published boards
     List<PlayRecord> plays = new ArrayList<PlayRecord>();
-    //plays.addAll(playsCurrentBoard);
-    plays.addAll(playsNextBoards);
+    if (channel.publishedBoardNumbers != null && !channel.publishedBoardNumbers.isEmpty()) {
+      List<PlayRecord> playsNextBoards = PlayRecord.find("sessionid = ? and matchid = ? and boardnumber not in :publishedBoardnumbers order by boardnumber ASC, iscard ASC, externalid ASC",
+          sessionID,
+          matchID
+      )
+          .bind("publishedBoardnumbers", channel.publishedBoardNumbers)
+          .fetch();
+
+      plays.addAll(playsNextBoards);
+    } else {
+      List<PlayRecord> playsNextBoards = PlayRecord.find("sessionid = ? and matchid = ? order by boardnumber ASC, iscard ASC, externalid ASC", sessionID, matchID).fetch();
+      plays.addAll(playsNextBoards);
+    }
+
 
     if (plays.size() > 0) {
       for (PlayRecord play : plays) {
@@ -134,10 +142,12 @@ public class PublishJob extends Job {
     Match match = Match.findById(matchIDObj);
     if (match == null) {
       // Match could not be found anymore, which means it is deleted so we should kill the channel and its subscriptionss
+      channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Match", match));
       isMatchFinished = true;
       Logger.info("Match could not be found");
     } else if (match.isFinished()) {
       // Publish match object, since match is finished
+      Logger.info("Publishing the Match record: " + match);
       channel.publish(ResponseBuilder.createDataResponse("Data pushed by Bridgemate Broadcast server", "Match", match));
       isMatchFinished = true;
     } else {

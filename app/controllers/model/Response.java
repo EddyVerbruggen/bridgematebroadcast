@@ -47,4 +47,9 @@ public class Response {
   public void setResponseType(String responseType) {
     this.responseType = responseType;
   }
+
+  @Override
+  public String toString() {
+    return "[ResponseType: " + responseType + ", " + response + "]";
+  }
 }

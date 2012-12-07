@@ -27,6 +27,7 @@ public class LivefeedTestDataJob extends Job {
   private long nrOfSecondsSimulating = 0;
   private long nrOfSecondsMatchIsFinished = 0;
 
+  private Long playIDToUpdateTo = 0L;
   private Long lastInsertedPlayID = 0L;
   private Map<MatchID, Long> currentBoardNumberPerMatch = new HashMap<MatchID, Long>();
   private List<Long> insertedBoardNumbers = new ArrayList<Long>();
@@ -52,9 +53,10 @@ public class LivefeedTestDataJob extends Job {
 
   private void doRunning() {
 
-    Logger.debug("doRunning for " + nrOfSecondsSimulating + " seconds ");
+    Logger.info("doRunning for " + lastInsertedPlayID);
 
     //Insert play records created since previous insert
+    playIDToUpdateTo = 0L;
     List<LivefeedPlay> livefeedPlayList = LivefeedPlay.find("playid > ? and playid <= ?", lastInsertedPlayID, lastInsertedPlayID + 1).fetch();
     for (LivefeedPlay livefeedPlay : livefeedPlayList) {
       // First, check if the handrecord should be inserted
@@ -97,11 +99,22 @@ public class LivefeedTestDataJob extends Job {
 
       // Save the play record
       play.save();
-      lastInsertedPlayID = play.playid;
+      playIDToUpdateTo = play.playid;
     }
 
-    // Let's see if we are done inserting all play records
-    if (livefeedPlayList.isEmpty()) {
+    // Let's see if we are done inserting all play records, find all plays still to be inserted
+    List<LivefeedPlay> playsToBeInserted = LivefeedPlay.find("playid > ?", lastInsertedPlayID).fetch();
+
+    if (playIDToUpdateTo == 0L) {
+      // find the next play id to insert
+      if (!playsToBeInserted.isEmpty()) {
+        playIDToUpdateTo = playsToBeInserted.get(0).playid - 1;
+      }
+    }
+
+    lastInsertedPlayID = playIDToUpdateTo;
+
+    if (playsToBeInserted.isEmpty()) {
       List<Match> matches = Match.findAll();
       for (Match match : matches) {
         // Last play is published, let's see if we still have a result to publish
@@ -123,10 +136,11 @@ public class LivefeedTestDataJob extends Job {
     if (nrOfSecondsMatchIsFinished == 0) {
       List<Match> matches = Match.findAll();
       for (Match match : matches) {
+        Logger.info("Updating status of match " + match.id.matchid);
         match.status = 2L;
         match.save();
       }
-    } else if (nrOfSecondsMatchIsFinished > 30) {
+    } else if (nrOfSecondsMatchIsFinished > 60) {
       status = Status.START;
     }
 
