@@ -80,7 +80,11 @@ public class AdminController extends Controller {
         // No id there, so create the new provided tournament and set its default values
         if (!t.isEmpty()) {
           Tournament lastTournament = Tournament.find("order by tournamentid desc").first();
-          t.tournamentid = lastTournament.tournamentid + 1;
+          if (lastTournament != null) {
+            t.tournamentid = lastTournament.tournamentid + 1;
+          } else {
+            t.tournamentid = 1L;
+          }
           t.status = 0L;
           t.save();
         }
@@ -151,7 +155,11 @@ public class AdminController extends Controller {
         // No id there, so create the new provided tournament and set its default values
         if (!s.isEmpty()) {
           Session lastSession = Session.find("order by sessionid desc").first();
-          s.sessionid = lastSession.sessionid + 1;
+          if (lastSession != null) {
+            s.sessionid = lastSession.sessionid + 1;
+          } else {
+            s.sessionid = 1L;
+          }
           s.tournament = Tournament.findById(s.tournament.tournamentid);
           s.status = 0L;
           s.save();
