@@ -11,9 +11,6 @@ import java.util.*;
 @Every("1s")
 public class LivefeedTestDataJob extends Job {
 
-  static final Long TOURNAMENTID = 54253876L;
-  static final Long SESSIONID = 56066789L;
-  
   enum Status {
     START,
     RUNNING,
@@ -28,7 +25,7 @@ public class LivefeedTestDataJob extends Job {
   private long nrOfSecondsMatchIsFinished = 0;
 
   private Long playIDToUpdateTo = 0L;
-  private Long lastInsertedPlayID = 0L;
+  private Long lastInsertedPlayID = 29235L;
   private Map<MatchID, Long> currentBoardNumberPerMatch = new HashMap<MatchID, Long>();
   private List<Long> insertedBoardNumbers = new ArrayList<Long>();
 
@@ -64,7 +61,7 @@ public class LivefeedTestDataJob extends Job {
         Logger.info("Insert record into handrecord with boardnumber " + livefeedPlay.boardnumber);
         // Insert handrecord
         HandRecordID id = new HandRecordID();
-        id.sessionID = SESSIONID;
+        id.sessionID = livefeedPlay.match.id.sessionid;
         id.boardNumber = livefeedPlay.boardnumber;
 
         LivefeedHandrecord livefeedHandrecord = LivefeedHandrecord.findById(id);
@@ -156,19 +153,21 @@ public class LivefeedTestDataJob extends Job {
     deleteOldData();
 
     // Insert the tournament record on Application Startup using livefeedTournament
-    LivefeedTournament livefeedTournament = LivefeedTournament.findById(TOURNAMENTID);
-    Tournament tournament = createTournament(livefeedTournament);
-    tournament.save();
+    List<LivefeedTournament> livefeedTournamentList = LivefeedTournament.findAll();
+    for (LivefeedTournament livefeedTournament : livefeedTournamentList) {
+      Tournament tournament = createTournament(livefeedTournament);
+      tournament.save();
+    }
 
     // Insert the session record(s) on Application Startup using livefeedSession
-    List<LivefeedSession> livefeedSessionList = LivefeedSession.find("tournamentid = ?", TOURNAMENTID).fetch();
+    List<LivefeedSession> livefeedSessionList = LivefeedSession.findAll();
     for (LivefeedSession livefeedSession : livefeedSessionList) {
       Session session = createSession(livefeedSession);
       session.save();
     }
 
     // When the session starts, insert the matches from the match table
-    List<LivefeedMatch> livefeedMatchList = LivefeedMatch.find("sessionid = ?", SESSIONID).fetch();
+    List<LivefeedMatch> livefeedMatchList = LivefeedMatch.findAll();
     for (LivefeedMatch livefeedMatch : livefeedMatchList) {
       Match match = createMatch(livefeedMatch);
       match.save();
