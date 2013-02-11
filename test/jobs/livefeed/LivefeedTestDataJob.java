@@ -27,7 +27,7 @@ public class LivefeedTestDataJob extends Job {
   private Long playIDToUpdateTo = 0L;
   private Long lastInsertedPlayID = 29235L;
   private Map<MatchID, Long> currentBoardNumberPerMatch = new HashMap<MatchID, Long>();
-  private List<Long> insertedBoardNumbers = new ArrayList<Long>();
+  private Map<Long, List<Long>> insertedBoardNumbersPerSession = new HashMap<Long, List<Long>>();
 
   @Override
   public void doJob() throws Exception {
@@ -57,7 +57,12 @@ public class LivefeedTestDataJob extends Job {
     List<LivefeedPlay> livefeedPlayList = LivefeedPlay.find("playid > ? and playid <= ?", lastInsertedPlayID, lastInsertedPlayID + 1).fetch();
     for (LivefeedPlay livefeedPlay : livefeedPlayList) {
       // First, check if the handrecord should be inserted
-      if (!insertedBoardNumbers.contains(livefeedPlay.boardnumber)) {
+      List<Long> insertedBoardNumbersForThisSession = insertedBoardNumbersPerSession.get(livefeedPlay.match.id.sessionid);
+      if (insertedBoardNumbersForThisSession == null) {
+        insertedBoardNumbersPerSession.put(livefeedPlay.match.id.sessionid, new ArrayList<Long>());
+        insertedBoardNumbersForThisSession = insertedBoardNumbersPerSession.get(livefeedPlay.match.id.sessionid);
+      }
+      if (!insertedBoardNumbersForThisSession.contains(livefeedPlay.boardnumber)) {
         Logger.info("Insert record into handrecord with boardnumber " + livefeedPlay.boardnumber);
         // Insert handrecord
         HandRecordID id = new HandRecordID();
@@ -67,7 +72,7 @@ public class LivefeedTestDataJob extends Job {
         LivefeedHandrecord livefeedHandrecord = LivefeedHandrecord.findById(id);
         Handrecord handrecord = createHandrecord(livefeedHandrecord);
         handrecord.save();
-        insertedBoardNumbers.add(livefeedPlay.boardnumber);
+        insertedBoardNumbersForThisSession.add(livefeedPlay.boardnumber);
       }
 
       // Create the play record (save it after result record of previous board is inserted)
@@ -182,7 +187,7 @@ public class LivefeedTestDataJob extends Job {
 
     lastInsertedPlayID = 0L;
 //    lastInsertedResultID = 0L;
-    insertedBoardNumbers = new ArrayList<Long>();
+    insertedBoardNumbersPerSession = new HashMap<Long, List<Long>>();
     currentBoardNumberPerMatch = new HashMap<MatchID, Long>();
   }
 
