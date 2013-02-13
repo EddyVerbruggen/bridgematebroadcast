@@ -8,7 +8,7 @@ import play.jobs.Job;
 
 import java.util.*;
 
-@Every("1s")
+//@Every("1s")
 public class LivefeedTestDataJob extends Job {
 
   enum Status {
@@ -18,7 +18,7 @@ public class LivefeedTestDataJob extends Job {
   }
 
   //Start in START mode
-  private Status status = Status.START;
+  protected Status status = Status.START;
 
   // Timestamp of start
   private long nrOfSecondsSimulating = 0;
@@ -26,8 +26,8 @@ public class LivefeedTestDataJob extends Job {
 
   private Long playIDToUpdateTo = 0L;
   private Long lastInsertedPlayID = 29235L;
-  private Map<MatchID, Long> currentBoardNumberPerMatch = new HashMap<MatchID, Long>();
-  private Map<Long, List<Long>> insertedBoardNumbersPerSession = new HashMap<Long, List<Long>>();
+  protected Map<MatchID, Long> currentBoardNumberPerMatch = new HashMap<MatchID, Long>();
+  protected Map<Long, List<Long>> insertedBoardNumbersPerSession = new HashMap<Long, List<Long>>();
 
   @Override
   public void doJob() throws Exception {
@@ -48,7 +48,7 @@ public class LivefeedTestDataJob extends Job {
     }
   }
 
-  private void doRunning() {
+  protected void doRunning() {
 
     Logger.info("doRunning for " + lastInsertedPlayID);
 
@@ -176,12 +176,16 @@ public class LivefeedTestDataJob extends Job {
     for (LivefeedMatch livefeedMatch : livefeedMatchList) {
       Match match = createMatch(livefeedMatch);
       match.save();
+      doAdditionalMatchStuff(match);
     }
 
     status = Status.RUNNING;
   }
 
-  private void resetStatus() {
+  protected void doAdditionalMatchStuff(Match match) {
+  }
+
+  protected void resetStatus() {
     nrOfSecondsSimulating = 0;
     nrOfSecondsMatchIsFinished = 0;
 
@@ -191,7 +195,7 @@ public class LivefeedTestDataJob extends Job {
     currentBoardNumberPerMatch = new HashMap<MatchID, Long>();
   }
 
-  private Result createResult(LivefeedResult livefeedResult) {
+  protected Result createResult(LivefeedResult livefeedResult) {
     Result result = new Result();
     result.resultid = livefeedResult.resultid;
     result.match = createMatch(livefeedResult.match);
@@ -210,7 +214,7 @@ public class LivefeedTestDataJob extends Job {
     return result;
   }
 
-  private PlayRecord createPlay(LivefeedPlay livefeedPlay) {
+  protected PlayRecord createPlay(LivefeedPlay livefeedPlay) {
     PlayRecord play = new PlayRecord();
     play.playid = livefeedPlay.playid;
     play.match = createMatch(livefeedPlay.match);
@@ -226,7 +230,7 @@ public class LivefeedTestDataJob extends Job {
     return play;
   }
 
-  private Handrecord createHandrecord(LivefeedHandrecord livefeedHandrecord) {
+  protected Handrecord createHandrecord(LivefeedHandrecord livefeedHandrecord) {
     Handrecord handrecord = new Handrecord();
     handrecord.handRecordID = livefeedHandrecord.handRecordID;
 
@@ -238,7 +242,7 @@ public class LivefeedTestDataJob extends Job {
     return handrecord;
   }
 
-  private Match createMatch(LivefeedMatch livefeedMatch) {
+  protected Match createMatch(LivefeedMatch livefeedMatch) {
     Match match = new Match();
     match.id = livefeedMatch.id;
     match.tablenumber = livefeedMatch.tablenumber;
@@ -261,7 +265,7 @@ public class LivefeedTestDataJob extends Job {
     return match;
   }
 
-  private Tournament createTournament(LivefeedTournament livefeedTournament) {
+  protected Tournament createTournament(LivefeedTournament livefeedTournament) {
     Tournament tournament = new Tournament();
 
     tournament.tournamentid = livefeedTournament.tournamentid;
@@ -275,7 +279,7 @@ public class LivefeedTestDataJob extends Job {
     return tournament;
   }
 
-  private Session createSession(LivefeedSession livefeedSession) {
+  protected Session createSession(LivefeedSession livefeedSession) {
     Session session = new Session();
     session.sessionid = livefeedSession.sessionid;
     session.tournament = Tournament.findById(livefeedSession.tournament.tournamentid);
@@ -285,7 +289,7 @@ public class LivefeedTestDataJob extends Job {
     return session;
   }
 
-  private void deleteOldData() {
+  protected void deleteOldData() {
     PlayRecord.deleteAll();
     Result.deleteAll();
     Match.deleteAll();
