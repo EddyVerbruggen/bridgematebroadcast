@@ -290,6 +290,7 @@ public class LivefeedTestDataJob extends Job {
   }
 
   protected void deleteOldData() {
+    System.out.println("deleteOldData");
     PlayRecord.deleteAll();
     Result.deleteAll();
     Match.deleteAll();
