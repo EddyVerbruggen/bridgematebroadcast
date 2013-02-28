@@ -126,8 +126,8 @@ public class LivefeedTestDataJobPerMatch extends LivefeedTestDataJob {
   protected void doAdditionalMatchStuff(Match match) {
     matchStatuses.put(match.id, new LivefeedTestDataMatchStatus());
     // Testing only 1 match
-    matchStatuses.clear();
-    matchStatuses.put(new MatchID(507301L, 10109L), new LivefeedTestDataMatchStatus());
+//    matchStatuses.clear();
+//    matchStatuses.put(new MatchID(507301L, 10109L), new LivefeedTestDataMatchStatus());
 
   }
 }
