@@ -75,7 +75,10 @@ public class LivefeedTestDataJobPerMatch extends LivefeedTestDataJob {
       PlayRecord play = createPlay(currentPlay);
 
       status.lastPublishedPlayExternalID = currentPlay.externalid;
-      status.lastPublishedPlayIscard = currentPlay.iscard;
+      if (nextPlay!= null && nextPlay.iscard > currentPlay.iscard) {
+        status.lastPublishedPlayExternalID = 0L;
+        status.lastPublishedPlayIscard = nextPlay.iscard;
+      }
 
       if (nextPlay == null || nextPlay.boardnumber > play.boardnumber) {
         // Board number will be changed after the current play, so there should be a result record and we should update the current boardnumber
@@ -122,5 +125,9 @@ public class LivefeedTestDataJobPerMatch extends LivefeedTestDataJob {
   @Override
   protected void doAdditionalMatchStuff(Match match) {
     matchStatuses.put(match.id, new LivefeedTestDataMatchStatus());
+    // Testing only 1 match
+    matchStatuses.clear();
+    matchStatuses.put(new MatchID(507301L, 10109L), new LivefeedTestDataMatchStatus());
+
   }
 }
